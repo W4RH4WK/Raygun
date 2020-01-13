@@ -1,0 +1,36 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+indent_style = space
+indent_size = 2
+
+[*.{hpp,cpp,def}]
+indent_style = space
+indent_size = 4
+
+[*.{frag,vert,comp,rgen,rint,rahit,rchit,rmiss,rcall}]
+indent_style = space
+indent_size = 4
+
+[*.{sln,vcxproj}]
+end_of_line = crlf
+insert_final_newline = false
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+[*.bat]
+end_of_line = crlf
+indent_style = spaces
+indent_size = 2
+
+[*.json]
+indent_style = spaces
+indent_size = 2

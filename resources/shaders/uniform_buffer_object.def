@@ -1,0 +1,17 @@
+// Be careful with alignment!
+
+mat4 viewInverse;
+mat4 projInverse;
+
+vec3 clearColor;
+int numSamples;
+
+vec3 lightDir;
+int maxRecursions;
+
+float time;
+bool showAlpha;
+float pad0;
+float pad1;
+
+vec4 fadeColor;

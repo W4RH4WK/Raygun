@@ -1,0 +1,71 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2019,2020 The Raygun Authors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+
+#pragma once
+
+#include "raygun/transform.hpp"
+
+namespace fmt {
+
+template<>
+struct formatter<raygun::vec3> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+    template<typename FormatContext>
+    auto format(const raygun::vec3& p, FormatContext& ctx)
+    {
+        return format_to(ctx.out(), "({: 5.2f}, {: 5.2f}, {: 5.2f})", p.x, p.y, p.z);
+    }
+};
+
+template<>
+struct formatter<raygun::vec4> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+    template<typename FormatContext>
+    auto format(const raygun::vec4& p, FormatContext& ctx)
+    {
+        return format_to(ctx.out(), "({: 5.2f}, {: 5.2f}, {: 5.2f}, {: 5.2f})", p.x, p.y, p.z, p.w);
+    }
+};
+
+template<>
+struct formatter<raygun::Transform> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+    template<typename FormatContext>
+    auto format(const raygun::Transform& t, FormatContext& ctx)
+    {
+        return format_to(ctx.out(), "P: {} R: {} S: {}", t.position, t.eulerAngles(), t.scaling);
+    }
+};
+
+} // namespace fmt

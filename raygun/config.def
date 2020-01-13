@@ -1,0 +1,51 @@
+#ifndef CONFIG_BOOL
+    #define CONFIG_BOOL(_identifier, _default)
+#endif
+
+#ifndef CONFIG_INT
+    #define CONFIG_INT(_identifier, _default)
+#endif
+
+#ifndef CONFIG_DOUBLE
+    #define CONFIG_DOUBLE(_identifier, _default)
+#endif
+
+#ifndef CONFIG_ENUM
+    #define CONFIG_ENUM(_identifier, _enum)
+#endif
+
+#ifndef CONFIG_ENUM_ENTRY
+    #define CONFIG_ENUM_ENTRY(_identifier, _enum, _entry)
+#endif
+
+#ifndef CONFIG_ENUM_END
+    #define CONFIG_ENUM_END(_identifier, _enum, _default)
+#endif
+
+CONFIG_ENUM(fullscreen, Fullscreen)
+CONFIG_ENUM_ENTRY(fullscreen, Fullscreen, Fullscreen)
+CONFIG_ENUM_ENTRY(fullscreen, Fullscreen, Borderless)
+CONFIG_ENUM_ENTRY(fullscreen, Fullscreen, Window)
+CONFIG_ENUM_END(fullscreen, Fullscreen, Window)
+
+CONFIG_ENUM(presentMode, PresentMode)
+CONFIG_ENUM_ENTRY(presentMode, PresentMode, Immediate)
+CONFIG_ENUM_ENTRY(presentMode, PresentMode, Mailbox)
+CONFIG_ENUM_ENTRY(presentMode, PresentMode, Fifo)
+CONFIG_ENUM_ENTRY(presentMode, PresentMode, FifoRelaxed)
+CONFIG_ENUM_END(presentMode, PresentMode, Mailbox)
+
+CONFIG_INT(width, 1920)
+CONFIG_INT(height, 1080)
+
+CONFIG_DOUBLE(effectVolume, 1.0)
+CONFIG_DOUBLE(musicVolume, 0.3)
+
+CONFIG_BOOL(headless, false);
+
+#undef CONFIG_BOOL
+#undef CONFIG_INT
+#undef CONFIG_DOUBLE
+#undef CONFIG_ENUM
+#undef CONFIG_ENUM_ENTRY
+#undef CONFIG_ENUM_END

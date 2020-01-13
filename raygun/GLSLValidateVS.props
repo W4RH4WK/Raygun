@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)/GLSLValidateTargets.props" />
+    <AvailableItemName Include="GLSLValidate">
+      <Targets>GLSLValidate</Targets>
+    </AvailableItemName>
+    <ShaderHeader Include="$(SolutionDir)resources\shaders\*.h;$(SolutionDir)resources\shaders\*.def" />
+  </ItemGroup>
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <GLSLVALIDATOREXE>%VULKAN_SDK%\Bin\glslc.exe</GLSLVALIDATOREXE>
+    <ShaderHeaders>@(ShaderHeader)</ShaderHeaders>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <Target Name="GLSLValidate" Inputs="@(GLSLValidate);$(ShaderHeaders)" AfterTargets="ClCompile" Outputs="%(RelativeDir)%(Filename).spv">
+    <Message Text="$(GLSLVALIDATOREXE) -o %(RelativeDir)%(Filename).spv &quot;%(GLSLValidate.FullPath)&quot;" Importance="high" />
+    <Exec Command="$(GLSLVALIDATOREXE) -o %(RelativeDir)%(Filename).spv &quot;%(GLSLValidate.FullPath)&quot;" />
+  </Target>
+</Project>

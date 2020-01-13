@@ -1,0 +1,14 @@
+{
+  "type": "Material",
+  "diffuse": [
+    0.7,
+    0.01,
+    0.01
+  ],
+  "specular": [
+    0.2,
+    0.2,
+    0.2
+  ],
+  "roughness": 0.5
+}

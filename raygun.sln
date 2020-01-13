@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29418.71
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "raygun", "raygun.vcxproj", "{B431776F-F479-475E-9EDC-9BD2F149E315}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example", "example\example.vcxproj", "{FF0AEE88-A639-442D-BB56-D9B6DBC2C984}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B431776F-F479-475E-9EDC-9BD2F149E315}.Debug|x64.ActiveCfg = Debug|x64
+		{B431776F-F479-475E-9EDC-9BD2F149E315}.Debug|x64.Build.0 = Debug|x64
+		{B431776F-F479-475E-9EDC-9BD2F149E315}.Release|x64.ActiveCfg = Release|x64
+		{B431776F-F479-475E-9EDC-9BD2F149E315}.Release|x64.Build.0 = Release|x64
+		{FF0AEE88-A639-442D-BB56-D9B6DBC2C984}.Debug|x64.ActiveCfg = Debug|x64
+		{FF0AEE88-A639-442D-BB56-D9B6DBC2C984}.Debug|x64.Build.0 = Debug|x64
+		{FF0AEE88-A639-442D-BB56-D9B6DBC2C984}.Release|x64.ActiveCfg = Release|x64
+		{FF0AEE88-A639-442D-BB56-D9B6DBC2C984}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AA016ACA-617D-423A-BD3C-3C911C9630F1}
+	EndGlobalSection
+EndGlobal

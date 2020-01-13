@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <ItemType Name="GLSLValidate" DisplayName="GLSL Validator" />
+  <ContentType Name="GLSLValidate" DisplayName="GLSL Validator" ItemType="GLSLValidate" />
+  <FileExtension Name="*.frag" ContentType="GLSLValidate" />
+  <FileExtension Name="*.vert" ContentType="GLSLValidate" />
+  <FileExtension Name="*.geom" ContentType="GLSLValidate" />
+  <FileExtension Name="*.comp" ContentType="GLSLValidate" />
+  <FileExtension Name="*.tese" ContentType="GLSLValidate" />
+  <FileExtension Name="*.tesc" ContentType="GLSLValidate" />
+  <FileExtension Name="*.rgen" ContentType="GLSLValidate" />
+  <FileExtension Name="*.rint" ContentType="GLSLValidate" />
+  <FileExtension Name="*.rahit" ContentType="GLSLValidate" />
+  <FileExtension Name="*.rchit" ContentType="GLSLValidate" />
+  <FileExtension Name="*.rmiss" ContentType="GLSLValidate" />
+  <FileExtension Name="*.rcall" ContentType="GLSLValidate" />
+</ProjectSchemaDefinitions>

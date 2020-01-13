@@ -1,0 +1,16 @@
+raygun/**/*.hpp text eol=lf
+raygun/**/*.cpp text eol=lf
+raygun/**/*.def text eol=lf
+
+resources/**/*.frag text eol=lf
+resources/**/*.vert text eol=lf
+resources/**/*.comp text eol=lf
+resources/**/*.rgen text eol=lf
+resources/**/*.rint text eol=lf
+resources/**/*.rahit text eol=lf
+resources/**/*.rchit text eol=lf
+resources/**/*.rmiss text eol=lf
+resources/**/*.rcall text eol=lf
+
+*.dae binary
+*.obj binary

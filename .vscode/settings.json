@@ -1,0 +1,10 @@
+{
+  "files.exclude": {
+    "**/*.spv": true
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  },
+  "glsllint.glslangValidatorPath": "glslangValidator.exe",
+  "glsllint.glslangValidatorArgs": "-l -Iresources/shaders"
+}

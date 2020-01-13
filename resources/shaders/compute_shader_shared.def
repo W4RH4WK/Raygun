@@ -1,0 +1,5 @@
+#define COMPUTE_WG_X_SIZE 16
+#define COMPUTE_WG_Y_SIZE 16
+#define COMPUTE_WG_Z_SIZE 1
+
+#define COMPUTE_PP_MIPS 5

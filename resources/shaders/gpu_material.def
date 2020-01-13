@@ -1,0 +1,29 @@
+// Pay attention to alignment.
+
+#ifndef MAT_PARAM
+    #define MAT_PARAM(_type, _name, _default, _min, _max) _type _name;
+#endif
+
+#ifndef MAT_PARAM_PAD
+    #define MAT_PARAM_PAD(_type, _name) MAT_PARAM(_type, _name, 0, 0, 0)
+#endif
+
+MAT_PARAM(vec3, diffuse, vec3(1.0f, 0.0f, 1.0f), vec3(0.f, 0.f, 0.f), vec3(1.f, 1.f, 1.f))
+MAT_PARAM(float, transparency, 0.f, 0.f, 1.f)
+
+MAT_PARAM(vec3, specular, vec3(1.f, 1.f, 1.f), vec3(0.f, 0.f, 0.f), vec3(1.f, 1.f, 1.f))
+MAT_PARAM(float, reflectivity, 0.f, 0.f, 1.f)
+
+MAT_PARAM(float, roughness, 0.f, 0.f, 1.f)
+MAT_PARAM(float, ior, 1.f, 0.5f, 3.f)
+
+MAT_PARAM(uint, effectId, 0, 0, 10)
+MAT_PARAM(uint, rayConsumption, 1, 1, 5)
+
+MAT_PARAM(float, emission, 0.f, 0.f, 5.f)
+MAT_PARAM_PAD(float, pad0)
+MAT_PARAM_PAD(float, pad1)
+MAT_PARAM_PAD(float, pad2)
+
+#undef MAT_PARAM
+#undef MAT_PARAM_PAD

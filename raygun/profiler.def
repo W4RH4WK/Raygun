@@ -1,0 +1,12 @@
+
+#ifndef GPU_TIME
+    #define GPU_TIME(_name, _inchart, _color)
+#endif
+
+GPU_TIME(ASBuild, true, ImColor(0.9f, 0.3f, 0.3f))
+GPU_TIME(RTTotal, true, ImColor(0.3f, 0.9f, 0.3f))
+GPU_TIME(RTOnly, false, ImColor(0.0f, 0.0f, 0.0f))
+GPU_TIME(Postproc, true, ImColor(0.3f, 0.3f, 0.9f))
+GPU_TIME(Rough, false, ImColor(0.0f, 0.0f, 0.0f))
+
+#undef GPU_TIME

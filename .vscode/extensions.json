@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "cadenas.vscode-glsllint",
+    "editorconfig.editorconfig",
+    "slevesque.shader",
+    "xaver.clang-format"
+  ],
+  "unwantedRecommendations": []
+}

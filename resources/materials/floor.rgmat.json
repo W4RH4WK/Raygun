@@ -1,0 +1,18 @@
+{
+  "type": "Material",
+  "diffuse": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "specular": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "reflectivity": 0.3,
+  "transparency": 0.0,
+  "roughness": 0.0,
+  "ior": 1.0,
+  "effectId": 1
+}

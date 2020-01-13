@@ -1,0 +1,7 @@
+// Pay attention to alignment.
+
+vec3 position;
+uint matIndex;
+
+vec3 normal;
+float pad1;
