@@ -75,7 +75,8 @@ Material::Material(string_view name, const fs::path& path) : Material()
     }
 
     if(data.contains("basedOn")) {
-        const auto baseMaterial = RG().resourceManager().loadMaterial(data.at("basedOn"));
+        const string baseName = data.at("basedOn");
+        const auto baseMaterial = RG().resourceManager().loadMaterial(baseName);
         copyParameters(*this, *baseMaterial);
     }
 
