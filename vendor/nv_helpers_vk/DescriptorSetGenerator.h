@@ -34,6 +34,7 @@ Contacts for feedback:
 
 #include <array>
 #include <unordered_map>
+#include <vector>
 
 namespace nv_helpers_vk {
 /// Helper class generating consistent descriptor pools, layouts and sets

@@ -45,6 +45,8 @@ buffer needs to be kept until the command list execution is finished.
 
 */
 
+#include <cstring>
+
 #include "TopLevelASGenerator.h"
 #include "VKHelpers.h"
 
