@@ -47,7 +47,7 @@ class Config {
 #define CONFIG_ENUM_ENTRY(_identifier, _enum, _entry) _entry,
 #define CONFIG_ENUM_END(_identifier, _enum, _default) \
     } \
-    _identifier = _enum::##_default;
+    _identifier = _enum::_default;
 
 #include "raygun/config.def"
 

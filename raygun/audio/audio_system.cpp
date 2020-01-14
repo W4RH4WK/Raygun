@@ -40,7 +40,7 @@ AudioSystem::AudioSystem()
 
     setupMusic();
 
-    for(int i = 0; i < m_soundEffects.size(); ++i) {
+    for(size_t i = 0; i < m_soundEffects.size(); ++i) {
         m_soundEffects[i] = std::make_unique<Source>();
     }
 }

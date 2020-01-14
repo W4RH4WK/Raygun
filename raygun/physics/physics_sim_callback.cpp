@@ -59,7 +59,7 @@ void SimCallback::onContact(const PxContactPairHeader& header, const PxContactPa
         touch = Touch::Lost;
     }
 
-    PxContactPairPoint contact;
+    PxContactPairPoint contact = {};
     pair.extractContacts(&contact, 1);
 
     if(auto it = contactEvents.find(header.actors[0]); it != contactEvents.end()) {

@@ -68,7 +68,7 @@ class VulkanContext {
     void resize();
 
     template<typename T>
-    void setObjectName(const T& object, string_view name)
+    void setObjectName([[maybe_unused]] const T& object, [[maybe_unused]] string_view name)
     {
         static_assert(vulkan::is_vulkan_type_v<T>);
 

@@ -81,7 +81,7 @@ void Config::load()
 
 #define CONFIG_ENUM_ENTRY(_identifier, _enum, _entry) \
     if(data[#_identifier] == #_entry) { \
-        _identifier = _enum::##_entry; \
+        _identifier = _enum::_entry; \
     }
 
 #define CONFIG_ENUM_END(_identifier, _enum, _default) }
@@ -108,7 +108,7 @@ void Config::save() const
 #define CONFIG_DOUBLE(_identifier, _default) data[#_identifier] = _identifier;
 
 #define CONFIG_ENUM_ENTRY(_identifier, _enum, _entry) \
-    if(_identifier == _enum::##_entry) { \
+    if(_identifier == _enum::_entry) { \
         data[#_identifier] = #_entry; \
     }
 

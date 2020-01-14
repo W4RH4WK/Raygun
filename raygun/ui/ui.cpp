@@ -335,7 +335,7 @@ void SelectableWidget::doLayout(const Window& wnd)
     static_assert(RAYGUN_ARRAY_COUNT(weights) == RAYGUN_ARRAY_COUNT(targets));
 
     // iterate over up, down, left, right, same search procedure for each one
-    for(int i = 0; i < RAYGUN_ARRAY_COUNT(targets); ++i) {
+    for(size_t i = 0; i < RAYGUN_ARRAY_COUNT(targets); ++i) {
         SelectableWidget* best = nullptr;
         float bestDistance = std::numeric_limits<float>::max();
 
@@ -376,7 +376,7 @@ bool SelectableWidget::runUI(double deltatime, input::Input input)
         static_assert(RAYGUN_ARRAY_COUNT(targets) == RAYGUN_ARRAY_COUNT(inputs));
 
         // iterate over up, down, left, right, same search procedure for each one
-        for(int i = 0; i < RAYGUN_ARRAY_COUNT(targets); ++i) {
+        for(size_t i = 0; i < RAYGUN_ARRAY_COUNT(targets); ++i) {
             if(targets[i] && inputs[i]) {
                 deselect();
                 targets[i]->select();

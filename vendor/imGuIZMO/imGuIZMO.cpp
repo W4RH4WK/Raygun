@@ -321,7 +321,7 @@ bool imguiGizmo::drawFunc(const char* label, float size)
 
     bool value_changed = false;
 
-    if(label[0]!='#' && label[1]!='#') ImGui::LabelText("", label);
+    if(label[0]!='#' && label[1]!='#') ImGui::LabelText("", "%s", label);
 
     ImVec2 controlPos = ImGui::GetCursorScreenPos();
 

@@ -111,11 +111,11 @@ void Profiler::doUI() const
     ImGui::Text("CPU times | %s: %5.2f | %s: %5.2f", "CPU", cpuTimes[prevStatFrame()], "Total", totalTimes[prevStatFrame()]);
     ImGui::Text("     mean | %s: %5.2f | %s: %5.2f", "CPU", utils::mean(cpuTimes), "Total", utils::mean(totalTimes));
 
-    ImGui::Text(gpuTTexts.c_str());
-    ImGui::Text(gpuTMeans.c_str());
+    ImGui::Text("%s", gpuTTexts.c_str());
+    ImGui::Text("%s", gpuTMeans.c_str());
 
     float smoothedMax = 0.f;
-    for(int i = 1; i < STATISTIC_FRAMES - 1; ++i) {
+    for(size_t i = 1; i < STATISTIC_FRAMES - 1; ++i) {
         smoothedMax = std::max(smoothedMax, std::min(totalTimes[i - 1], totalTimes[i]));
     }
 

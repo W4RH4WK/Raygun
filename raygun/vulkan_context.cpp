@@ -144,6 +144,9 @@ void VulkanContext::setupDebug()
         case VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             vulkanLogger->error("{}", data->pMessage);
             break;
+        case VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
+            RAYGUN_FATAL("unreachable");
+            break;
         }
 
         return false;
@@ -191,7 +194,7 @@ void VulkanContext::selectQueueFamily()
 {
     auto families = physicalDevice.getQueueFamilyProperties();
 
-    for(int i = 0; i < families.size(); ++i) {
+    for(size_t i = 0; i < families.size(); ++i) {
         const auto& family = families[i];
 
         if(graphicsQueueFamilyIndex == UINT32_MAX && family.queueFlags & vk::QueueFlagBits::eGraphics) {

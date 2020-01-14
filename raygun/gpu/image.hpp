@@ -33,7 +33,7 @@ class Image {
 
     const vk::Extent2D& extent() const { return m_extent; }
     const vk::Format& format() const { return m_format; }
-    const uint32_t numMips() const { return m_numMips; }
+    uint32_t numMips() const { return m_numMips; }
     const vk::ImageLayout& initialLayout() const { return m_initialLayout; }
 
     const vk::Image& image() const { return *m_image; }

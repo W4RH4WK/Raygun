@@ -117,8 +117,8 @@ std::shared_ptr<ui::Font> ResourceManager::loadFont(string_view nameView)
     auto entity = std::make_shared<Entity>(name, RESOURCES_DIR / "fonts" / (name + ".obj"), false);
 
     for(const auto& glyph: entity->children()) {
-        auto index = std::stoi(glyph->name);
-        if(index < 0 || index >= result->charMap.size()) continue;
+        const auto index = std::stoul(glyph->name);
+        if(index >= result->charMap.size()) continue;
 
         const auto& mesh = glyph->model->mesh;
         auto bounds = mesh->bounds();

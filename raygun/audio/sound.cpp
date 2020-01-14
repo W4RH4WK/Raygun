@@ -43,7 +43,7 @@ Sound::Sound(string_view name, const fs::path& path) : m_name(name)
     const auto numSamplesPerChannel = op_pcm_total(file, -1);
 
     std::vector<opus_int16> buf(numSamplesPerChannel * numChannels);
-    for(auto readSamples = 0; readSamples < buf.size();) {
+    for(size_t readSamples = 0; readSamples < buf.size();) {
         auto readSamplesPerChannel = op_read(file, buf.data() + readSamples, (int)(buf.size() - readSamples), nullptr);
         readSamples += readSamplesPerChannel * numChannels;
     }

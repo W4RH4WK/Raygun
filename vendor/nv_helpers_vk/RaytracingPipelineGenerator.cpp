@@ -144,6 +144,9 @@ uint32_t RayTracingPipelineGenerator::AddHitShaderStage(VkShaderModule        mo
       group.type               = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
       group.intersectionShader = shaderIndex;
       break;
+
+    default:
+      break;
   }
 
   return m_currentGroupIndex;
