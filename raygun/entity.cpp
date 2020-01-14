@@ -86,7 +86,6 @@ Entity::Entity(string_view name) : name(name) {}
 Entity::Entity(string_view name, fs::path filepath, bool loadMaterials) : Entity(name)
 {
     Assimp::Importer importer;
-    importer.SetPropertyBool(AI_CONFIG_IMPORT_COLLADA_USE_COLLADA_NAMES, true);
 
     const auto aiscene = importer.ReadFile(filepath.string(), aiProcess_Triangulate);
     if(!aiscene) {
