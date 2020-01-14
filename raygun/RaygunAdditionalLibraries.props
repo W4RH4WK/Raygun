@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemDefinitionGroup>
-    <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\GLFW;$(SolutionDir)vendor\PhysX\lib\win64\$(Configuration);$(SolutionDir)vendor\assimp;$(SolutionDir)vendor\OpenAL\lib;$(SolutionDir)vendor\opus\lib;%VULKAN_SDK%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;PhysXCommon_64.lib;PhysX_64.lib;PhysXFoundation_64.lib;PhysXCooking_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;assimp-vc140-mt.lib;OpenAL32.lib;EFX-Util.lib;libogg_static.lib;opus.lib;opusfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
-</Project>

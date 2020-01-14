@@ -1,11 +1,5 @@
-.vs/
-bin/
-config/
+/config
 
-*.vcxproj.filters
-*.vcxproj.user
-
-*.log
 *.spv
 
 *.blend[1-9]
