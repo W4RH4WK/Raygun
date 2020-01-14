@@ -32,10 +32,10 @@
 #define RAYGUN_ERROR ::raygun::logger->error
 #define RAYGUN_CRITICAL ::raygun::logger->critical
 
-#define RAYGUN_FATAL(_fmt, ...) \
+#define RAYGUN_FATAL(...) \
     do { \
-        RAYGUN_CRITICAL(_fmt, __VA_ARGS__); \
-        RAYGUN_BREAK; \
+        RAYGUN_CRITICAL(__VA_ARGS__); \
+        RAYGUN_BREAK(); \
         abort(); \
     } while(0)
 

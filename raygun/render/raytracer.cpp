@@ -196,13 +196,12 @@ void Raytracer::reload()
     // recompile shaders
     {
         const auto shaderDir = fs::path{"resources/shaders"};
-        const std::set<fs::path> extensions = {".comp", ".rgen", ".rchit", ".rmiss"};
+        const std::set<fs::path> extensions = {".rgen", ".rint", ".rahit", ".rchit", ".rmiss", ".rcall"};
 
         for(const auto& entry: fs::directory_iterator(shaderDir)) {
             if(extensions.find(entry.path().extension()) == extensions.end()) continue;
 
-            const auto cmd = fmt::format("glslc.exe -Isrc -o {1}.spv {0}", entry.path(), shaderDir / entry.path().stem());
-
+            const auto cmd = fmt::format("glslc.exe -o {0}.spv {0}", entry.path());
             if(system(cmd.c_str()) != 0) {
                 RAYGUN_WARN("Compiling {} failed", entry.path());
             }
@@ -266,17 +265,17 @@ void Raytracer::setupRaytracingPipeline()
 {
     nv_helpers_vk::RayTracingPipelineGenerator gen;
 
-    const auto rayGen = RG().resourceManager().loadShader("raygen");
+    const auto rayGen = RG().resourceManager().loadShader("raygen.rgen");
     rayGenIndex = gen.AddRayGenShaderStage(*rayGen->shaderModule);
 
-    const auto miss = RG().resourceManager().loadShader("miss");
+    const auto miss = RG().resourceManager().loadShader("miss.rmiss");
     missIndex = gen.AddMissShaderStage(*miss->shaderModule);
 
-    const auto shadowMiss = RG().resourceManager().loadShader("shadowMiss");
+    const auto shadowMiss = RG().resourceManager().loadShader("shadowMiss.rmiss");
     shadowMissIndex = gen.AddMissShaderStage(*shadowMiss->shaderModule);
 
     hitGroupIndex = gen.StartHitGroup();
-    const auto closestHit = RG().resourceManager().loadShader("closesthit");
+    const auto closestHit = RG().resourceManager().loadShader("closesthit.rchit");
     gen.AddHitShaderStage(*closestHit->shaderModule, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
     gen.EndHitGroup();
 
@@ -320,12 +319,12 @@ void Raytracer::setupPostprocessing()
 {
     auto& cs = RG().computeSystem();
 
-    m_roughPrepare = cs.createComputePass("rough_prepare");
-    m_roughBlurH = cs.createComputePass("rough_blur_h");
-    m_roughBlurV = cs.createComputePass("rough_blur_v");
+    m_roughPrepare = cs.createComputePass("rough_prepare.comp");
+    m_roughBlurH = cs.createComputePass("rough_blur_h.comp");
+    m_roughBlurV = cs.createComputePass("rough_blur_v.comp");
 
-    m_postprocess = cs.createComputePass("postprocess");
-    m_fxaa = cs.createComputePass("fxaa");
+    m_postprocess = cs.createComputePass("postprocess.comp");
+    m_fxaa = cs.createComputePass("fxaa.comp");
 }
 
 } // namespace raygun::render

@@ -9,8 +9,6 @@ Therefore, a GPU supporting NVIDIA Ray Tracing is required.
 For window and input management, [GLFW] is utilized.
 Debugging and profiling information is displayed via [ImGui].
 
-This project currently targets Windows, but can be ported to Linux or macOS without substantial effort.
-
 [NVIDIA Vulkan Ray Tracing]: https://devblogs.nvidia.com/vulkan-raytracing/
 [PhysX]: https://www.geforce.com/hardware/technology/physx/
 [OpenAL]: https://www.openal.org/
@@ -68,19 +66,12 @@ This project currently targets Windows, but can be ported to Linux or macOS with
 
 ## Development Notes
 
-- Use Visual Studio 2019
-  - Set `example` as startup project
-- Shaders are recompiled automatically (by `raygun` project)
-  - Adjust `raygun/GLSLValidateVS.props` to take additional header files into account
-- Vulkan SDK needs to be installed
-  - Environment variable `VULKAN_SDK` should be set accordingly
-  - Version `1.1.126.0` was used during development
-- Compile options are inherited from property sheets located in the `raygun` subdirectory
+- Shaders are automatically compiled at build-time
+- Use Vulkan SDK `1.1.126`
 - For generating fonts using the provided script, `blender.exe` should be in `PATH`
 - A Blender plugin is provided to enable instant scene export
-- If you choose to compile PhysX yourself
-  - Enable runtime type information
-  - Select the correct Windows runtime library
+
+Build instructions are available for [Windows](docs/build_instructions_windows.md) and [Linux](docs/build_instructions_linux.md).
 
 ## Third-Party
 

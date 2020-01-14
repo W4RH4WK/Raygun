@@ -1,0 +1,18 @@
+if(MSVC)
+    set_property(GLOBAL PROPERTY raygun_dlls)
+endif()
+
+function(raygun_copy_dlls)
+    if(MSVC)
+        set_property(GLOBAL APPEND PROPERTY raygun_dlls ${ARGV})
+    endif()
+endfunction()
+
+function(raygun_handle_copy_dlls target)
+    if(MSVC)
+        get_property(raygun_dlls GLOBAL PROPERTY raygun_dlls)
+        foreach(dll IN LISTS raygun_dlls)
+            add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${dll} $(OutDir))
+        endforeach()
+    endif()
+endfunction()

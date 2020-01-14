@@ -51,7 +51,7 @@ VulkanContext::VulkanContext()
 
     setupInstance();
 
-#ifdef _DEBUG
+#ifndef NDEBUG
     setupDebug();
 #endif
 
@@ -78,14 +78,14 @@ VulkanContext::~VulkanContext()
 void VulkanContext::setupInstance()
 {
     const std::vector<const char*> layers = {
-#ifdef _DEBUG
+#ifndef NDEBUG
         "VK_LAYER_KHRONOS_validation",
 #endif
         "VK_LAYER_LUNARG_monitor",
     };
 
     std::vector<const char*> extensions = {
-#ifdef _DEBUG
+#ifndef NDEBUG
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 #endif
@@ -217,7 +217,7 @@ void VulkanContext::selectQueueFamily()
 void VulkanContext::setupDevice()
 {
     std::vector<const char*> extensions = {
-#ifdef _DEBUG
+#ifndef NDEBUG
         VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
 #endif
         VK_NV_RAY_TRACING_EXTENSION_NAME,

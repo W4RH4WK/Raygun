@@ -44,11 +44,11 @@ struct LoggerSetup {
 
         logger->set_pattern("%T.%e %^%L%$ [%n] %v");
 
-#ifdef _DEBUG
+#ifdef NDEBUG
+        logger->flush_on(spdlog::level::warn);
+#else
         logger->set_level(spdlog::level::debug);
         logger->flush_on(spdlog::level::debug);
-#else
-        logger->flush_on(spdlog::level::warn);
 #endif
 
         try {

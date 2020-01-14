@@ -70,7 +70,7 @@ class VulkanContext {
     {
         static_assert(vulkan::is_vulkan_type_v<T>);
 
-#ifdef _DEBUG
+#ifndef NDEBUG
         vk::DebugMarkerObjectNameInfoEXT info = {};
         info.setObjectType(vulkan::getDebugReportObjectTypeEXT<T>());
         info.setObject(reinterpret_cast<const uint64_t&>(object));

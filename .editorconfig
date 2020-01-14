@@ -18,9 +18,9 @@ indent_size = 4
 indent_style = space
 indent_size = 4
 
-[*.{sln,vcxproj}]
-end_of_line = crlf
-insert_final_newline = false
+[{CMakeLists.txt,*.cmake}]
+indent_style = space
+indent_size = 4
 
 [*.py]
 indent_style = space

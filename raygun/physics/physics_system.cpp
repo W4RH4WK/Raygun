@@ -39,7 +39,7 @@ PhysicsSystem::PhysicsSystem()
     , m_cooking(PxCreateCooking(PX_PHYSICS_VERSION, *m_foundation, PxCookingParams(PxTolerancesScale())))
     , m_defaultMaterial(m_physics->createMaterial(0.8f, 0.8f, 0.6f))
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     if(m_pvd->connect(*m_pvdTransport, PxPvdInstrumentationFlag::eALL)) {
         RAYGUN_DEBUG("Connected to PhysX debugger");
     }
@@ -72,7 +72,7 @@ UniqueScene PhysicsSystem::createScene()
 
     const auto scene = m_physics->createScene(desc);
 
-#ifdef _DEBUG
+#ifndef NDEBUG
     if(const auto pvdClient = scene->getScenePvdClient()) {
         pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
         pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);

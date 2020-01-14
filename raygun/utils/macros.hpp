@@ -27,8 +27,12 @@
 
 #define RAYGUN_MAKE_VERSION(major, minor, patch) "v" RAYGUN_XSTR(major) "." RAYGUN_XSTR(minor) "." RAYGUN_XSTR(patch)
 
-#ifdef _DEBUG
-    #define RAYGUN_BREAK __debugbreak();
+#ifdef NDEBUG
+    #define RAYGUN_BREAK()
 #else
-    #define RAYGUN_BREAK
+    #ifdef _WIN32
+        #define RAYGUN_BREAK() __debugbreak()
+    #else
+        #define RAYGUN_BREAK() ::std::raise(SIGTRAP)
+    #endif
 #endif

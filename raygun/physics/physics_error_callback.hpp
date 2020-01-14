@@ -34,10 +34,10 @@ class ErrorCallback : public physx::PxErrorCallback {
     {
         using namespace physx;
 
-#ifdef _DEBUG
-        const auto fmt = "{3} {2}\n\t{0}:{1}";
-#else
+#ifdef NDEBUG
         const auto fmt = "{3} {2}";
+#else
+        const auto fmt = "{3} {2}\n\t{0}:{1}";
 #endif
 
         switch(code) {

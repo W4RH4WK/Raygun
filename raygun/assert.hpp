@@ -24,13 +24,13 @@
 
 #include "raygun/logging.hpp"
 
-#ifdef _DEBUG
+#ifdef NDEBUG
+    #define RAYGUN_ASSERT(_cond)
+#else
     #define RAYGUN_ASSERT(_cond) \
         do { \
             if(!(_cond)) { \
                 RAYGUN_FATAL("Assertion: {}\n\t{}:{}", RAYGUN_XSTR(_cond), __FILE__, __LINE__); \
             } \
         } while(0)
-#else
-    #define RAYGUN_ASSERT(_cond)
 #endif

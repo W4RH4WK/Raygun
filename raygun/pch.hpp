@@ -61,6 +61,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <csignal>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -86,18 +87,18 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-#include <imgui/imgui.h>
-#include <imgui/imgui_impl_glfw.h>
-#include <imgui/imgui_impl_vulkan.h>
-#include <imgui/multiplot.h>
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_glfw.h>
+#include <ImGui/imgui_impl_vulkan.h>
+#include <ImGui/multiplot.h>
 
 #include <imGuIZMO/imGuIZMO.h>
 
 //////////////////////////////////////////////////////////////////////////
 
 // PhysX complains if neither _DEBUG nor NDEBUG is set.
-#ifndef _DEBUG
-    #define NDEBUG
+#if !defined(NDEBUG) && !defined(_DEBUG)
+    #define _DEBUG
 #endif
 
 #include <PxPhysicsAPI.h>
@@ -127,8 +128,8 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
+#include <AL/al.h>
+#include <AL/alc.h>
 
 #include <opus/opus_types.h>
 #include <opus/opusfile.h>
