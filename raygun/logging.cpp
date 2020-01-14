@@ -58,7 +58,7 @@ struct LoggerSetup {
             const auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFile.string());
             logger->sinks().push_back(fileSink);
         }
-        catch(std::filesystem::filesystem_error e) {
+        catch(fs::filesystem_error e) {
             logger->warn("Unable to use log file: {}", e.what());
         }
 
