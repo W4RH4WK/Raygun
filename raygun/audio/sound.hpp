@@ -29,7 +29,7 @@ class Sound {
     Sound(string_view name, const fs::path& path);
     ~Sound();
 
-    string_view name() const { return m_name; }
+    const string& name() const { return m_name; }
 
     operator ALuint() { return m_buffer; }
 
