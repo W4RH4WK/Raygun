@@ -71,7 +71,7 @@ void Profiler::startFrame()
     }
 
     // Get GPU times from device
-    vc.device->getQueryPoolResults(*timestampQueryPool, prevQueryFrame() * MAX_TIMESTAMP_QUERIES, MAX_TIMESTAMP_QUERIES, vk::ArrayProxy(timestampQueryResults),
+    vc.device->getQueryPoolResults(*timestampQueryPool, prevQueryFrame() * MAX_TIMESTAMP_QUERIES, MAX_TIMESTAMP_QUERIES, vk::ArrayProxy<size_t>(timestampQueryResults),
                                    sizeof(uint64_t), vk::QueryResultFlagBits::e64);
 
     // Transform GPU times from from ticks (plus some potential invalid bits) to valid time units
