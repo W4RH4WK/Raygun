@@ -78,6 +78,10 @@ Raygun::Raygun(string_view title, UniqueConfig config)
 
 Raygun::~Raygun()
 {
+    // Ensure GPU pipeline is empty. Otherwise objects may be destroyed while
+    // in use.
+    m_vc->waitIdle();
+
     instance = nullptr;
 }
 
