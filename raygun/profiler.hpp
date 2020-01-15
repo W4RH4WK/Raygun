@@ -65,10 +65,10 @@ class Profiler {
     std::array<uint64_t, MAX_TIMESTAMP_QUERIES* QUERY_BUFFER_FRAMES> timestampQueryResults = {};
     uint32_t timestampValidBits;
 
-    std::array<float, STATISTIC_FRAMES> cpuTimes;
-    std::array<float, STATISTIC_FRAMES> totalTimes;
+    std::array<float, STATISTIC_FRAMES> cpuTimes = {};
+    std::array<float, STATISTIC_FRAMES> totalTimes = {};
 
-#define GPU_TIME(_name, _inchart, _color) std::array<float, STATISTIC_FRAMES> _name##Times;
+#define GPU_TIME(_name, _inchart, _color) std::array<float, STATISTIC_FRAMES> _name##Times = {};
 #include "raygun/profiler.def"
 
     uint32_t curStatFrame = 0;
