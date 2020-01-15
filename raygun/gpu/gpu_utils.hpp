@@ -29,11 +29,11 @@ namespace raygun::gpu {
 
 /// C API calls yield objects that should be wrapped in a UniqueHandler. This
 /// function initializes the corresponding deleter for you.
-template<typename T, typename D>
-vk::UniqueHandle<T, vk::DispatchLoaderDynamic> wrapUnique(const T& value, const D& destroyer)
+template<typename T, typename OwnerType>
+vk::UniqueHandle<T, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> wrapUnique(const T& value, const OwnerType& owner)
 {
-    const auto deleter = vk::ObjectDestroy<D, vk::DispatchLoaderDynamic>{destroyer};
-    return vk::UniqueHandle<T, vk::DispatchLoaderDynamic>{value, deleter};
+    const vk::ObjectDestroy destroyer{owner, nullptr, VULKAN_HPP_DEFAULT_DISPATCHER};
+    return vk::UniqueHandle<T, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>{value, destroyer};
 }
 
 /// While you commonly store vectors of UniqueHandles, most C++ API calls take a
