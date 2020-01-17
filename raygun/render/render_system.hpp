@@ -45,8 +45,6 @@ class RenderSystem {
     RenderSystem();
     ~RenderSystem();
 
-    void resize();
-
     void preSimulation();
 
     void render(Scene& scene);
@@ -130,6 +128,8 @@ class RenderSystem {
     void endRenderPass();
 
     void presentFrame();
+
+    void resize();
 
     void setupRenderPass();
 };

@@ -59,8 +59,13 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::resize()
 {
-    m_swapchain->resize();
+    m_vc.waitIdle();
 
+    m_vc.windowSize = RG().windowSize();
+
+    RG().scene().camera->updateProjection();
+
+    m_swapchain->resize();
     m_raytracer->resize();
 }
 
@@ -343,7 +348,13 @@ void RenderSystem::presentFrame()
     presentInfo.setPSwapchains(&m_swapchain->swapchain());
     presentInfo.setPImageIndices(&m_framebufferIndex);
 
-    m_vc.presentQueue->queue().presentKHR(presentInfo);
+    try {
+        m_vc.presentQueue->queue().presentKHR(presentInfo);
+    }
+    catch(const vk::OutOfDateKHRError&) {
+        RAYGUN_DEBUG("Swap chain out of date");
+        resize();
+    }
 }
 
 void RenderSystem::setupRenderPass()

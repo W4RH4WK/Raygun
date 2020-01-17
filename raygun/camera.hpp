@@ -35,7 +35,7 @@ class Camera : public Entity {
 
     mat4 projInverse() const { return glm::inverse(m_projection); }
 
-    void updateAspectRatio();
+    void updateProjection();
 
   private:
     mat4 m_projection = mat4{1.0f};
@@ -43,8 +43,6 @@ class Camera : public Entity {
     static constexpr float FOV = 45.f;
     static constexpr float NEAR = 0.1f;
     static constexpr float FAR = 100.0f;
-
-    void updateProjection(float aspectRatio = 16.0f / 9.0f);
 };
 
 } // namespace raygun

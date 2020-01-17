@@ -306,7 +306,7 @@ void Raygun::finalizeLoadScene()
 
     m_timestamp = Clock::now();
 
-    m_scene->camera->updateAspectRatio();
+    m_scene->camera->updateProjection();
 }
 
 Raygun& RG()

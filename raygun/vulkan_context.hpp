@@ -65,8 +65,6 @@ class VulkanContext {
 
     void waitForFence(vk::Fence fence);
 
-    void resize();
-
     template<typename T>
     void setObjectName([[maybe_unused]] const T& object, [[maybe_unused]] string_view name)
     {

@@ -77,8 +77,6 @@ Window::Window(string_view title)
     }
 
     glfwSetWindowIcon(m_window, 1, &m_windowIcon.image);
-
-    glfwSetFramebufferSizeCallback(m_window, [](auto, auto, auto) { RG().window().m_resized = true; });
 }
 
 Window::~Window()
@@ -114,16 +112,6 @@ void Window::handleEvents()
 {
     if(glfwWindowShouldClose(m_window)) {
         RG().quit();
-    }
-
-    if(m_resized && !minimized()) {
-        m_resized = false;
-
-        RAYGUN_DEBUG("Resizing");
-
-        RG().scene().camera->updateAspectRatio();
-        RG().vc().resize();
-        RG().renderSystem().resize();
     }
 }
 

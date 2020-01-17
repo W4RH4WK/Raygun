@@ -31,19 +31,15 @@ Camera::Camera() : Entity("camera")
     updateProjection();
 }
 
-void Camera::updateAspectRatio()
+void Camera::updateProjection()
 {
-    const auto size = RG().windowSize();
-    if(size.height == 0.0f) {
-        updateProjection();
-    }
-    else {
-        updateProjection((float)size.width / (float)size.height);
-    }
-}
+    const auto windowSize = RG().vc().windowSize;
 
-void Camera::updateProjection(float aspectRatio)
-{
+    auto aspectRatio = (float)windowSize.width / (float)windowSize.height;
+    if(!std::isfinite(aspectRatio)) {
+        aspectRatio = 16.0f / 9.0f;
+    }
+
     m_projection = glm::perspective(glm::radians(FOV), aspectRatio, NEAR, FAR);
 
     // Take GLM's flipped Y coordinate into account.

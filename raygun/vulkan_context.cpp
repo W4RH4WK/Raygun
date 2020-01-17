@@ -45,13 +45,6 @@ void VulkanContext::waitForFence(vk::Fence fence)
     }
 }
 
-void VulkanContext::resize()
-{
-    waitIdle();
-
-    windowSize = RG().windowSize();
-}
-
 VulkanContext::VulkanContext()
 {
     windowSize = RG().windowSize();

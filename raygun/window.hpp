@@ -45,8 +45,6 @@ class Window {
   private:
     GLFWwindow* m_window = nullptr;
     glfw::Icon m_windowIcon{APP_ICON};
-
-    bool m_resized = false;
 };
 
 using UniqueWindow = std::unique_ptr<Window>;
