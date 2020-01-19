@@ -120,7 +120,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, Scene& scene)
 
     // Since we need at least one instance, a dummy is added when necessary.
     if(instanceOffsetTable.empty()) {
-        m_dummy = new Dummy(cmd);
+        m_dummy = std::make_unique<Dummy>(cmd);
 
         // No ray should be able to hit this.
         const auto transform = glm::scale(mat4{1.0f}, zero());
@@ -162,10 +162,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, Scene& scene)
     }
 }
 
-TopLevelAS::~TopLevelAS()
-{
-    if(m_dummy) delete m_dummy;
-}
+TopLevelAS::~TopLevelAS() = default;
 
 BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 {

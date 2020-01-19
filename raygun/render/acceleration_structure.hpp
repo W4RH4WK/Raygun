@@ -59,8 +59,8 @@ class TopLevelAS {
     vk::WriteDescriptorSetAccelerationStructureNV m_info = {};
 
     /// At least one entry in the TopLevelAS is required. This dummy is added if
-    /// necessary. Raw pointer used due to forward declaration.
-    Dummy* m_dummy = nullptr;
+    /// necessary.
+    std::unique_ptr<Dummy> m_dummy;
 };
 
 using UniqueTopLevelAS = std::unique_ptr<TopLevelAS>;
