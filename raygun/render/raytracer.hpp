@@ -38,7 +38,6 @@ namespace raygun::render {
 struct Raytracer {
     vk::PhysicalDeviceRayTracingPropertiesNV raytracingProperties = {};
 
-    UniqueTopLevelAS previousTopLevelAS;
     UniqueTopLevelAS topLevelAS;
     vk::UniqueSemaphore topLevelASSemaphore;
 

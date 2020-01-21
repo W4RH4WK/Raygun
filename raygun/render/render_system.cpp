@@ -131,6 +131,8 @@ void RenderSystem::render(Scene& scene)
     RG().profiler().endFrame();
 
     presentFrame();
+
+    m_vc.waitIdle();
 }
 
 namespace {

@@ -53,8 +53,6 @@ void Raytracer::buildAccelerationStructure(Scene& scene)
             entity.model->bottomLevelAS = std::make_unique<BottomLevelAS>(*m_ASBuildCommandBuffer, *entity.model->mesh);
     });
 
-    // Simple double buffering of top level AS; Todo: improve
-    previousTopLevelAS.reset(topLevelAS.release());
     topLevelAS = std::make_unique<TopLevelAS>(*m_ASBuildCommandBuffer, scene);
 
     RG().profiler().writeTimestamp(*m_ASBuildCommandBuffer, TimestampQueryID::ASBuildEnd);
