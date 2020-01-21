@@ -23,24 +23,14 @@
 #pragma once
 
 #ifdef _WIN32
-
     #define WIN32_LEAN_AND_MEAN
     #define NOMINMAX
     #define _CRT_SECURE_NO_WARNINGS
-
     #include <Windows.h>
-
-    #include <ShlObj.h>
-    #include <mmsystem.h>
-
-    #ifdef _MSC_VER
-        #pragma comment(lib, "winmm.lib")
-    #endif
 
     // Symbols that leak and cause problems:
     #undef FAR
     #undef NEAR
-
 #endif
 
 //////////////////////////////////////////////////////////////////////////
