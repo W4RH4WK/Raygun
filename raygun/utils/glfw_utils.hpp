@@ -94,9 +94,15 @@ struct Icon {
             unsigned char value;
             in.read((char*)&value, 1);
 
+#ifdef NDEBUG
+            constexpr unsigned char base[] = {0x6c, 0x7a, 0x90};
+#else
+            constexpr unsigned char base[] = {0xd7, 0x39, 0x38};
+#endif
+
             // The image data is used as alpha channel with a fixed base color.
             const auto alpha = (unsigned char)(maxValue - value);
-            data.insert(data.end(), {0x42, 0x42, 0x42, alpha});
+            data.insert(data.end(), {base[0], base[1], base[2], alpha});
         }
 
         image.pixels = data.data();
