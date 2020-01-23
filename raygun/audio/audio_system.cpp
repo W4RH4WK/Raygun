@@ -29,26 +29,36 @@ namespace raygun::audio {
 AudioSystem::AudioSystem()
 {
     m_device = alcOpenDevice(nullptr);
-    if(!m_device) {
+    if(m_device) {
+        m_context = alcCreateContext(m_device, nullptr);
+        if(!m_context || !alcMakeContextCurrent(m_context)) {
+            RAYGUN_FATAL("Unable to set up audio context");
+        }
+    }
+    else {
         RAYGUN_WARN("No audio device");
-    }
-
-    m_context = alcCreateContext(m_device, nullptr);
-    if(!alcMakeContextCurrent(m_context)) {
-        RAYGUN_FATAL("Unable to set up audio context");
-    }
-
-    setupMusic();
-
-    for(size_t i = 0; i < m_soundEffects.size(); ++i) {
-        m_soundEffects[i] = std::make_unique<Source>();
     }
 }
 
 AudioSystem::~AudioSystem()
 {
-    alcDestroyContext(m_context);
-    alcCloseDevice(m_device);
+    if(m_context) {
+        alcMakeContextCurrent(nullptr);
+        alcDestroyContext(m_context);
+    }
+
+    if(m_device) {
+        alcCloseDevice(m_device);
+    }
+}
+
+void AudioSystem::setupDefaultSources()
+{
+    setupMusic();
+
+    for(size_t i = 0; i < m_soundEffects.size(); ++i) {
+        m_soundEffects[i] = std::make_unique<Source>();
+    }
 }
 
 void AudioSystem::update()
@@ -65,27 +75,6 @@ void AudioSystem::update()
     });
 }
 
-void AudioSystem::moveListener(const Transform& transform)
-{
-    const auto pos = transform.position;
-    alListener3f(AL_POSITION, pos.x, pos.y, pos.z);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
-
-    const auto up = transform.up();
-    const auto forward = transform.forward();
-    ALfloat orientation[] = {forward.x, forward.y, forward.z, up.x, up.y, up.z};
-    alListenerfv(AL_ORIENTATION, orientation);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
-}
-
-void AudioSystem::setupMusic()
-{
-    m_music = std::make_unique<Source>();
-    m_music->setGain(RG().config().musicVolume);
-    m_music->setLoop(true);
-    m_music->setPositional(false);
-}
-
 void AudioSystem::playSoundEffect(std::shared_ptr<Sound> sound, double gain, std::optional<vec3> position)
 {
     auto& source = *m_soundEffects[m_soundEffectsIndex++ % m_soundEffects.size()];
@@ -98,6 +87,35 @@ void AudioSystem::playSoundEffect(std::shared_ptr<Sound> sound, double gain, std
     source.setSound(std::move(sound));
     source.setGain(gain);
     source.play();
+}
+
+ALenum AudioSystem::getError() const
+{
+    if(!m_device) {
+        return AL_NO_ERROR;
+    }
+    return alGetError();
+}
+
+void AudioSystem::moveListener(const Transform& transform)
+{
+    const auto pos = transform.position;
+    alListener3f(AL_POSITION, pos.x, pos.y, pos.z);
+    RAYGUN_ASSERT(getError() == AL_NO_ERROR);
+
+    const auto up = transform.up();
+    const auto forward = transform.forward();
+    ALfloat orientation[] = {forward.x, forward.y, forward.z, up.x, up.y, up.z};
+    alListenerfv(AL_ORIENTATION, orientation);
+    RAYGUN_ASSERT(getError() == AL_NO_ERROR);
+}
+
+void AudioSystem::setupMusic()
+{
+    m_music = std::make_unique<Source>();
+    m_music->setGain(RG().config().musicVolume);
+    m_music->setLoop(true);
+    m_music->setPositional(false);
 }
 
 } // namespace raygun::audio

@@ -66,6 +66,7 @@ Raygun::Raygun(string_view title, UniqueConfig config)
     m_physicsSystem = std::make_unique<physics::PhysicsSystem>();
 
     m_audioSystem = std::make_unique<audio::AudioSystem>();
+    m_audioSystem->setupDefaultSources();
 
     loadScene(std::make_unique<Scene>());
 

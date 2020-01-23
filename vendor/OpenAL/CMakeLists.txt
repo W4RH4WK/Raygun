@@ -9,8 +9,6 @@ if(MSVC)
         IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/bin/OpenAL32.dll
     )
     raygun_copy_dlls(${CMAKE_CURRENT_SOURCE_DIR}/bin/OpenAL32.dll)
-
-    target_link_libraries(OpenAL INTERFACE efx_util)
 else()
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(OpenAL REQUIRED IMPORTED_TARGET GLOBAL openal)

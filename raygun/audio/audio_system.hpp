@@ -37,9 +37,15 @@ class AudioSystem {
 
     Source& music() { return *m_music; }
 
+    void setupDefaultSources();
+
     void update();
 
     void playSoundEffect(std::shared_ptr<Sound> sound, double gain = 1.0, std::optional<vec3> position = {});
+
+    /// Wrapper around alGetError, returns AL_NO_ERROR if sound device is
+    /// missing.
+    ALenum getError() const;
 
   private:
     ALCdevice* m_device = nullptr;

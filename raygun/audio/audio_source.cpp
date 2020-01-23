@@ -31,14 +31,14 @@ namespace raygun::audio {
 Source::Source()
 {
     alGenSources(1, &m_source);
-    if(auto err = alGetError(); err != AL_NO_ERROR) {
+    if(RG().audioSystem().getError() != AL_NO_ERROR) {
         RAYGUN_FATAL("Unable to generate audio source");
     }
 
     setGain(1.0);
 
     alSourcef(m_source, AL_REFERENCE_DISTANCE, 100.0f);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
+    RAYGUN_ASSERT(RG().audioSystem().getError() == AL_NO_ERROR);
 }
 
 Source::~Source()
@@ -51,7 +51,7 @@ void Source::play()
     if(!m_sound) return;
 
     alSourcePlay(m_source);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
+    RAYGUN_ASSERT(RG().audioSystem().getError() == AL_NO_ERROR);
 }
 
 void Source::play(std::shared_ptr<Sound> sound)
@@ -79,19 +79,19 @@ void Source::setGain(double gain)
     const auto effectVolume = RG().config().effectVolume;
 
     alSourcef(m_source, AL_GAIN, (float)(std::clamp(gain, 0.0, 1.0) * effectVolume));
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
+    RAYGUN_ASSERT(RG().audioSystem().getError() == AL_NO_ERROR);
 }
 
 void Source::setPitch(double factor)
 {
     alSourcef(m_source, AL_PITCH, (float)factor);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
+    RAYGUN_ASSERT(RG().audioSystem().getError() == AL_NO_ERROR);
 }
 
 void Source::setLoop(bool loop)
 {
     alSourcei(m_source, AL_LOOPING, loop);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
+    RAYGUN_ASSERT(RG().audioSystem().getError() == AL_NO_ERROR);
 }
 
 void Source::setPositional(bool positional)
@@ -114,7 +114,7 @@ void Source::setSound(std::shared_ptr<Sound> sound)
     m_sound = sound;
 
     alSourcei(m_source, AL_BUFFER, *m_sound);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
+    RAYGUN_ASSERT(RG().audioSystem().getError() == AL_NO_ERROR);
 }
 
 void Source::move(const vec3& pos)
@@ -122,13 +122,13 @@ void Source::move(const vec3& pos)
     if(!m_positional) return;
 
     alSource3f(m_source, AL_POSITION, pos.x, pos.y, pos.z);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
+    RAYGUN_ASSERT(RG().audioSystem().getError() == AL_NO_ERROR);
 }
 
 void Source::setSourceRelative(bool relative)
 {
     alSourcei(m_source, AL_SOURCE_RELATIVE, relative);
-    RAYGUN_ASSERT(alGetError() == AL_NO_ERROR);
+    RAYGUN_ASSERT(RG().audioSystem().getError() == AL_NO_ERROR);
 }
 
 } // namespace raygun::audio

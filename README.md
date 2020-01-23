@@ -11,7 +11,7 @@ Debugging and profiling information is displayed via [ImGui].
 
 [NVIDIA Vulkan Ray Tracing]: https://devblogs.nvidia.com/vulkan-raytracing/
 [PhysX]: https://www.geforce.com/hardware/technology/physx/
-[OpenAL]: https://www.openal.org/
+[OpenAL]: https://openal-soft.org/
 [GLFW]: https://www.glfw.org/
 [ImGui]: https://github.com/ocornut/imgui/
 

@@ -3,6 +3,7 @@
 ## 1.2.0 Render System Cleanup
 
 - Remove experimental headless mode
+- Replace reference OpenAL implementation with OpenAL Soft
 
 ## 1.1.0 Linux Support
 
