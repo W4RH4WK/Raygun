@@ -56,10 +56,12 @@ Window::Window(string_view title)
         break;
     }
 
+#ifdef _WIN32
     // HACK: see https://github.com/glfw/glfw/issues/527
     if(config.fullscreen == Config::Fullscreen::Borderless) {
         height++;
     }
+#endif
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
