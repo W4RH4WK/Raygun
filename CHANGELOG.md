@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 Linux Support (draft)
+
+The biggest change in this version is the migration from Visual Studio solutions to CMake.
+
+With this change, Raygun can now be built on Linux.
+Small adjustments were made to the code in order to fully support Linux.
+
+- Use different application icon colour depending on build type
+- Fix uninitialised data arrays in profiler
+- Fix Vulkan resources use-after-free bug on engine shutdown
+- Improve handling of window resize events
+
 ## 1.0.0 Initial Release
 
 This is the first public release of Raygun. 🎉
