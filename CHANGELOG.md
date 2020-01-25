@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.2.0 Render System Cleanup
+
 ## 1.1.0 Linux Support
 
 The biggest change in this version is the migration from Visual Studio solutions to CMake.
