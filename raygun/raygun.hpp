@@ -77,8 +77,6 @@ class Raygun {
 
     Scene& scene();
 
-    vk::Extent2D windowSize() const;
-
     /// Returns the active time passed since engine initialization.
     double time();
 

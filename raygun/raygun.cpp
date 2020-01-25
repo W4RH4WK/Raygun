@@ -49,13 +49,11 @@ Raygun::Raygun(string_view title, UniqueConfig config)
 
     m_resourceManager = std::make_unique<ResourceManager>();
 
-    if(!m_config->headless) {
-        m_glfwRuntime = std::make_unique<glfw::Runtime>();
+    m_glfwRuntime = std::make_unique<glfw::Runtime>();
 
-        m_window = std::make_unique<Window>(title);
+    m_window = std::make_unique<Window>(title);
 
-        m_inputSystem = std::make_unique<input::InputSystem>();
-    }
+    m_inputSystem = std::make_unique<input::InputSystem>();
 
     m_vc = std::make_unique<VulkanContext>();
 
@@ -63,9 +61,7 @@ Raygun::Raygun(string_view title, UniqueConfig config)
 
     m_computeSystem = std::make_unique<compute::ComputeSystem>();
 
-    if(!m_config->headless) {
-        m_renderSystem = std::make_unique<render::RenderSystem>();
-    }
+    m_renderSystem = std::make_unique<render::RenderSystem>();
 
     m_physicsSystem = std::make_unique<physics::PhysicsSystem>();
 
@@ -98,11 +94,9 @@ void Raygun::loop()
     while(!m_shouldQuit) {
         m_glfwRuntime->pollEvents();
 
-        if(m_window) {
-            m_window->handleEvents();
-        }
+        m_window->handleEvents();
 
-        if(m_window && m_window->minimized()) continue;
+        if(m_window->minimized()) continue;
 
         const auto input = m_inputSystem->handleEvents();
 
@@ -114,9 +108,7 @@ void Raygun::loop()
             finalizeLoadScene();
         }
 
-        if(m_renderSystem) {
-            m_renderSystem->preSimulation();
-        }
+        m_renderSystem->preSimulation();
 
         m_scene->preSimulation();
 
@@ -136,9 +128,7 @@ void Raygun::loop()
 
         m_audioSystem->update();
 
-        if(m_renderSystem) {
-            m_renderSystem->render(*m_scene);
-        }
+        m_renderSystem->render(*m_scene);
     }
 
     RAYGUN_INFO("End main loop");
@@ -259,16 +249,6 @@ Scene& Raygun::scene()
     return *m_scene;
 }
 
-vk::Extent2D Raygun::windowSize() const
-{
-    if(m_window) {
-        return m_window->size();
-    }
-    else {
-        return {(uint32_t)m_config->width, (uint32_t)m_config->height};
-    }
-}
-
 double Raygun::time()
 {
     return std::chrono::duration<double>(m_time).count();
@@ -303,10 +283,8 @@ void Raygun::finalizeLoadScene()
 
     m_resourceManager->clearUnusedModelsAndMaterials();
 
-    if(m_renderSystem) {
-        m_renderSystem->resetUniformBuffer();
-        m_renderSystem->setupModelBuffers();
-    }
+    m_renderSystem->resetUniformBuffer();
+    m_renderSystem->setupModelBuffers();
 
     m_timestamp = Clock::now();
 

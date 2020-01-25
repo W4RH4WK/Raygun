@@ -33,8 +33,6 @@ Window::Window(string_view title)
 {
     const auto& config = RG().config();
 
-    if(config.headless) return;
-
     int width = config.width;
     int height = config.height;
     auto monitor = glfwGetPrimaryMonitor();

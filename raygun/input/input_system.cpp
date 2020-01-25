@@ -34,11 +34,6 @@ InputSystem::InputSystem()
 
 Input InputSystem::handleEvents()
 {
-    if(RG().config().headless) {
-        RAYGUN_TRACE("Skipping window system events in headless mode");
-        return {};
-    }
-
     const auto& window = RG().window().window();
     const auto& pressed = [&](auto key) { return glfwGetKey(window, key) == GLFW_PRESS; };
 

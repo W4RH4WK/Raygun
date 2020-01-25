@@ -41,8 +41,6 @@ CONFIG_INT(height, 1080)
 CONFIG_DOUBLE(effectVolume, 1.0)
 CONFIG_DOUBLE(musicVolume, 0.3)
 
-CONFIG_BOOL(headless, false);
-
 #undef CONFIG_BOOL
 #undef CONFIG_INT
 #undef CONFIG_DOUBLE

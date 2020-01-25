@@ -60,7 +60,6 @@ Debugging and profiling information is displayed via [ImGui].
   - Animated entity support
 - Config load / store
 - Integrated logging
-- Headless mode (experimental)
 - Scene reloading (F5) (example project)
 - Hot shader reloading (F6)
 

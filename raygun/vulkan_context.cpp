@@ -47,7 +47,7 @@ void VulkanContext::waitForFence(vk::Fence fence)
 
 VulkanContext::VulkanContext()
 {
-    windowSize = RG().windowSize();
+    windowSize = RG().window().size();
 
     setupInstance();
 
@@ -57,9 +57,7 @@ VulkanContext::VulkanContext()
 
     setupPhysicalDevice();
 
-    if(!RG().config().headless) {
-        setupSurface(RG().window());
-    }
+    setupSurface(RG().window());
 
     selectQueueFamily();
 
@@ -92,10 +90,8 @@ void VulkanContext::setupInstance()
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
     };
 
-    if(!RG().config().headless) {
-        const auto glfwExtensions = RG().glfwRuntime().vulkanExtensions();
-        extensions.insert(extensions.end(), glfwExtensions.begin(), glfwExtensions.end());
-    }
+    const auto glfwExtensions = RG().glfwRuntime().vulkanExtensions();
+    extensions.insert(extensions.end(), glfwExtensions.begin(), glfwExtensions.end());
 
     vk::ApplicationInfo appInfo = {};
     appInfo.setPApplicationName(APP_NAME);
@@ -194,11 +190,7 @@ void VulkanContext::selectQueueFamily()
             graphicsQueueFamilyIndex = i;
         }
 
-        if(RG().config().headless) {
-            // Don't really care.
-            presentQueueFamilyIndex = graphicsQueueFamilyIndex;
-        }
-        else if(presentQueueFamilyIndex == UINT32_MAX && physicalDevice.getSurfaceSupportKHR(i, *surface)) {
+        if(presentQueueFamilyIndex == UINT32_MAX && physicalDevice.getSurfaceSupportKHR(i, *surface)) {
             presentQueueFamilyIndex = i;
         }
 
@@ -216,17 +208,14 @@ void VulkanContext::selectQueueFamily()
 
 void VulkanContext::setupDevice()
 {
-    std::vector<const char*> extensions = {
+    const std::vector<const char*> extensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+        VK_NV_RAY_TRACING_EXTENSION_NAME,
 #ifndef NDEBUG
         VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
 #endif
-        VK_NV_RAY_TRACING_EXTENSION_NAME,
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
     };
-
-    if(!RG().config().headless) {
-        extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    }
 
     const float queuePriorities[] = {1.0f};
 

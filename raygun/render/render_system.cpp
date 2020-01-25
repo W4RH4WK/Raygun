@@ -61,7 +61,7 @@ void RenderSystem::resize()
 {
     m_vc.waitIdle();
 
-    m_vc.windowSize = RG().windowSize();
+    m_vc.windowSize = RG().window().size();
 
     RG().scene().camera->updateProjection();
 
