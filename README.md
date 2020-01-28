@@ -72,6 +72,8 @@ Debugging and profiling information is displayed via [ImGui].
 
 Build instructions are available for [Windows](docs/build_instructions_windows.md) and [Linux](docs/build_instructions_linux.md).
 
+You may also find the [Raygun whitepaper](https://arxiv.org/abs/2001.09792) interesting.
+
 ## Third-Party
 
 Third-party dependencies are included for a good out-of-the-box experience.
