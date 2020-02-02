@@ -37,7 +37,7 @@
 
 namespace raygun::render {
 
-void Raytracer::setupBottomLevelAS() const
+void Raytracer::setupBottomLevelAS()
 {
     auto cmd = vc.computeQueue->createCommandBuffer();
     auto fence = vc.device->createFenceUnique({});
@@ -56,7 +56,7 @@ void Raytracer::setupBottomLevelAS() const
     vc.waitForFence(*fence);
 }
 
-void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, Scene& scene)
+void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 {
     RG().profiler().resetQueries(cmd);
 

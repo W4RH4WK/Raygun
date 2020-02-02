@@ -35,7 +35,7 @@ struct Dummy;
 
 class TopLevelAS {
   public:
-    TopLevelAS(const vk::CommandBuffer& cmd, Scene& scene);
+    TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene);
     ~TopLevelAS();
 
     const vk::AccelerationStructureNV& structure() const { return *m_structure; }

@@ -85,7 +85,7 @@ struct Dummy {
     gpu::UniqueBuffer indexBuffer;
 };
 
-TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, Scene& scene)
+TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
 {
     VulkanContext& vc = RG().vc();
 

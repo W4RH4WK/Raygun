@@ -57,9 +57,9 @@ struct Raytracer {
 
     //////////////////////////////////////////////////////////////////////////
 
-    void setupBottomLevelAS() const;
+    void setupBottomLevelAS();
 
-    void setupTopLevelAS(vk::CommandBuffer& cmd, Scene& scene);
+    void setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene);
 
     void doRaytracing(vk::CommandBuffer& cmd);
 
