@@ -27,7 +27,7 @@
 
 namespace raygun::gpu {
 
-DescriptorSet::DescriptorSet() : m_vc(RG().vc()) {}
+DescriptorSet::DescriptorSet() : vc(RG().vc()) {}
 
 void DescriptorSet::addBinding(uint32_t binding, uint32_t count, vk::DescriptorType type, vk::ShaderStageFlags stage)
 {
@@ -91,7 +91,7 @@ void DescriptorSet::bind(vk::WriteDescriptorSet write)
 
 void DescriptorSet::update()
 {
-    m_vc.device->updateDescriptorSets(m_pendingWrites, {});
+    vc.device->updateDescriptorSets(m_pendingWrites, {});
 
     m_pendingWrites.clear();
 }
@@ -123,7 +123,7 @@ vk::UniqueDescriptorPool DescriptorSet::generatePool() const
     info.setPPoolSizes(sizes.data());
     info.setMaxSets(1);
 
-    return m_vc.device->createDescriptorPoolUnique(info);
+    return vc.device->createDescriptorPoolUnique(info);
 }
 
 vk::UniqueDescriptorSetLayout DescriptorSet::generateLayout() const
@@ -135,7 +135,7 @@ vk::UniqueDescriptorSetLayout DescriptorSet::generateLayout() const
     info.setBindingCount((uint32_t)bindings.size());
     info.setPBindings(bindings.data());
 
-    return m_vc.device->createDescriptorSetLayoutUnique(info);
+    return vc.device->createDescriptorSetLayoutUnique(info);
 }
 
 vk::DescriptorSet DescriptorSet::generateSet() const
@@ -148,7 +148,7 @@ vk::DescriptorSet DescriptorSet::generateSet() const
     info.setDescriptorSetCount(1);
     info.setPSetLayouts(&*m_layout);
 
-    return m_vc.device->allocateDescriptorSets(info).at(0);
+    return vc.device->allocateDescriptorSets(info).at(0);
 }
 
 } // namespace raygun::gpu

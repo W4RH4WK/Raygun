@@ -30,7 +30,7 @@
 
 namespace raygun::render {
 
-RenderSystem::RenderSystem() : m_vc(RG().vc())
+RenderSystem::RenderSystem() : vc(RG().vc())
 {
     setupRenderPass();
 
@@ -39,29 +39,29 @@ RenderSystem::RenderSystem() : m_vc(RG().vc())
 
     m_swapchain = std::make_unique<Swapchain>(*this);
 
-    m_commandBuffer = m_vc.graphicsQueue->createCommandBuffer();
-    m_commandBufferFence = m_vc.device->createFenceUnique({vk::FenceCreateFlagBits::eSignaled});
+    m_commandBuffer = vc.graphicsQueue->createCommandBuffer();
+    m_commandBufferFence = vc.device->createFenceUnique({vk::FenceCreateFlagBits::eSignaled});
 
     m_raytracer = std::make_unique<Raytracer>();
 
     m_imGuiRenderer = std::make_unique<ImGuiRenderer>(*this);
 
-    m_imageAcquiredSemaphore = m_vc.device->createSemaphoreUnique({});
-    m_renderCompleteSemaphore = m_vc.device->createSemaphoreUnique({});
+    m_imageAcquiredSemaphore = vc.device->createSemaphoreUnique({});
+    m_renderCompleteSemaphore = vc.device->createSemaphoreUnique({});
 
     RAYGUN_INFO("Render system initialized");
 }
 
 RenderSystem::~RenderSystem()
 {
-    m_vc.waitIdle();
+    vc.waitIdle();
 }
 
 void RenderSystem::resize()
 {
-    m_vc.waitIdle();
+    vc.waitIdle();
 
-    m_vc.windowSize = RG().window().size();
+    vc.windowSize = RG().window().size();
 
     RG().scene().camera->updateProjection();
 
@@ -108,7 +108,7 @@ void RenderSystem::render(Scene& scene)
 
         vk::ImageBlit blit;
         vk::Offset3D offset = {0, 0, 0};
-        vk::Offset3D bound = {(int32_t)m_vc.windowSize.width, (int32_t)m_vc.windowSize.height, 1};
+        vk::Offset3D bound = {(int32_t)vc.windowSize.width, (int32_t)vc.windowSize.height, 1};
         blit.setDstOffsets({offset, bound});
         blit.setDstSubresource(subresourceLayers);
         blit.setSrcOffsets({offset, bound});
@@ -132,7 +132,7 @@ void RenderSystem::render(Scene& scene)
 
     presentFrame();
 
-    m_vc.waitIdle();
+    vc.waitIdle();
 }
 
 namespace {
@@ -300,9 +300,9 @@ void RenderSystem::beginFrame()
     m_framebufferIndex = m_swapchain->nextImageIndex(*m_imageAcquiredSemaphore);
 
     // Ensure command buffer is ready to use.
-    m_vc.waitForFence(*m_commandBufferFence);
+    vc.waitForFence(*m_commandBufferFence);
 
-    m_vc.device->resetFences(*m_commandBufferFence);
+    vc.device->resetFences(*m_commandBufferFence);
 
     m_commandBuffer->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 }
@@ -323,7 +323,7 @@ void RenderSystem::endFrame(std::vector<vk::Semaphore> waitSemaphores)
 
     m_commandBuffer->end();
 
-    m_vc.graphicsQueue->submit(submitInfo, *m_commandBufferFence);
+    vc.graphicsQueue->submit(submitInfo, *m_commandBufferFence);
 }
 
 void RenderSystem::beginRenderPass()
@@ -331,7 +331,7 @@ void RenderSystem::beginRenderPass()
     vk::RenderPassBeginInfo info = {};
     info.setRenderPass(*m_renderPass);
     info.setFramebuffer(m_swapchain->framebuffer(m_framebufferIndex));
-    info.setRenderArea({{0, 0}, m_vc.windowSize});
+    info.setRenderArea({{0, 0}, vc.windowSize});
 
     m_commandBuffer->beginRenderPass(info, vk::SubpassContents::eInline);
 }
@@ -351,7 +351,7 @@ void RenderSystem::presentFrame()
     presentInfo.setPImageIndices(&m_framebufferIndex);
 
     try {
-        m_vc.presentQueue->queue().presentKHR(presentInfo);
+        vc.presentQueue->queue().presentKHR(presentInfo);
     }
     catch(const vk::OutOfDateKHRError&) {
         RAYGUN_DEBUG("Swap chain out of date");
@@ -362,7 +362,7 @@ void RenderSystem::presentFrame()
 void RenderSystem::setupRenderPass()
 {
     std::array<vk::AttachmentDescription, 1> attachments;
-    attachments[0].setFormat(m_vc.surfaceFormat);
+    attachments[0].setFormat(vc.surfaceFormat);
     attachments[0].setSamples(SAMPLES);
     attachments[0].setLoadOp(vk::AttachmentLoadOp::eLoad);
     attachments[0].setStoreOp(vk::AttachmentStoreOp::eStore);
@@ -393,7 +393,7 @@ void RenderSystem::setupRenderPass()
     info.setDependencyCount((uint32_t)dependencies.size());
     info.setPDependencies(dependencies.data());
 
-    m_renderPass = m_vc.device->createRenderPassUnique(info);
+    m_renderPass = vc.device->createRenderPassUnique(info);
 }
 
 } // namespace raygun::render

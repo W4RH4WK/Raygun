@@ -62,7 +62,7 @@ class DescriptorSet {
     const vk::DescriptorSet& set() const { return m_set; }
 
   private:
-    VulkanContext& m_vc;
+    VulkanContext& vc;
 
     std::unordered_map<uint32_t, vk::DescriptorSetLayoutBinding> m_bindings;
 

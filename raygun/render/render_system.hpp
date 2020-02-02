@@ -113,7 +113,7 @@ class RenderSystem {
     vk::UniqueSemaphore m_imageAcquiredSemaphore;
     vk::UniqueSemaphore m_renderCompleteSemaphore;
 
-    VulkanContext& m_vc;
+    VulkanContext& vc;
 
     std::unique_ptr<Fade> m_currentFade;
 

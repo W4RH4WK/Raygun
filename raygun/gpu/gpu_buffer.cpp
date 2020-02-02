@@ -28,7 +28,7 @@
 
 namespace raygun::gpu {
 
-Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryType) : m_vc(RG().vc())
+Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryType) : vc(RG().vc())
 {
     RAYGUN_TRACE("Creating buffer: {} bytes", size);
 
@@ -42,14 +42,14 @@ Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryProper
     createInfo.setSize(size);
     createInfo.setSharingMode(vk::SharingMode::eExclusive);
 
-    m_buffer = m_vc.device->createBufferUnique(createInfo);
+    m_buffer = vc.device->createBufferUnique(createInfo);
 
     m_info.setBuffer(*m_buffer);
     m_info.setRange(size);
 
     alloc(memoryType);
 
-    m_vc.device->bindBufferMemory(*m_buffer, *m_memory, 0);
+    vc.device->bindBufferMemory(*m_buffer, *m_memory, 0);
 }
 
 Buffer::~Buffer()
@@ -60,7 +60,7 @@ Buffer::~Buffer()
 void* Buffer::map()
 {
     if(!m_mappedMemory) {
-        m_mappedMemory = m_vc.device->mapMemory(*m_memory, 0, m_allocInfo.allocationSize);
+        m_mappedMemory = vc.device->mapMemory(*m_memory, 0, m_allocInfo.allocationSize);
     }
 
     return m_mappedMemory;
@@ -69,21 +69,21 @@ void* Buffer::map()
 void Buffer::unmap()
 {
     if(m_mappedMemory) {
-        m_vc.device->unmapMemory(*m_memory);
+        vc.device->unmapMemory(*m_memory);
         m_mappedMemory = nullptr;
     }
 }
 
 void Buffer::alloc(const vk::MemoryPropertyFlags& memoryTypeFlags)
 {
-    const auto requirements = m_vc.device->getBufferMemoryRequirements(*m_buffer);
+    const auto requirements = vc.device->getBufferMemoryRequirements(*m_buffer);
 
-    const auto memoryType = selectMemoryType(m_vc.physicalDevice, requirements.memoryTypeBits, memoryTypeFlags);
+    const auto memoryType = selectMemoryType(vc.physicalDevice, requirements.memoryTypeBits, memoryTypeFlags);
 
     m_allocInfo.setAllocationSize(requirements.size);
     m_allocInfo.setMemoryTypeIndex(memoryType);
 
-    m_memory = m_vc.device->allocateMemoryUnique(m_allocInfo);
+    m_memory = vc.device->allocateMemoryUnique(m_allocInfo);
 }
 
 } // namespace raygun::gpu

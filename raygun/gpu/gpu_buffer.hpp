@@ -54,7 +54,7 @@ class Buffer {
     vk::DescriptorBufferInfo m_info = {};
     vk::MemoryAllocateInfo m_allocInfo = {};
 
-    const VulkanContext& m_vc;
+    VulkanContext& vc;
 };
 
 using UniqueBuffer = std::unique_ptr<Buffer>;
