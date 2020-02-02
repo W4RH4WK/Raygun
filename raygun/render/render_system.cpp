@@ -368,7 +368,7 @@ void RenderSystem::setupRenderPass()
     attachments[0].setStoreOp(vk::AttachmentStoreOp::eStore);
     attachments[0].setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
     attachments[0].setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-    attachments[0].setInitialLayout(vk::ImageLayout::eUndefined);
+    attachments[0].setInitialLayout(vk::ImageLayout::eGeneral);
     attachments[0].setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 
     vk::AttachmentReference colorRef = {};
