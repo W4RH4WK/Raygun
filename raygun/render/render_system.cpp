@@ -76,13 +76,13 @@ void RenderSystem::preSimulation()
 
 void RenderSystem::render(Scene& scene)
 {
-    m_raytracer->buildAccelerationStructure(scene);
-
     beginFrame();
     {
         updateUniformBuffer(*scene.camera);
 
         auto& image = m_swapchain->image(m_framebufferIndex);
+
+        m_raytracer->setupTopLevelAS(*m_commandBuffer, scene);
 
         m_raytracer->imageShaderWriteBarrier(*m_commandBuffer, image);
 
@@ -126,7 +126,7 @@ void RenderSystem::render(Scene& scene)
         }
         endRenderPass();
     }
-    endFrame({*m_raytracer->topLevelASSemaphore});
+    endFrame();
 
     RG().profiler().endFrame();
 

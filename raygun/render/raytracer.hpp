@@ -39,7 +39,6 @@ struct Raytracer {
     vk::PhysicalDeviceRayTracingPropertiesNV raytracingProperties = {};
 
     UniqueTopLevelAS topLevelAS;
-    vk::UniqueSemaphore topLevelASSemaphore;
 
     gpu::DescriptorSet descriptorSet;
 
@@ -60,7 +59,7 @@ struct Raytracer {
 
     void setupBottomLevelAS() const;
 
-    void buildAccelerationStructure(Scene& scene);
+    void setupTopLevelAS(vk::CommandBuffer& cmd, Scene& scene);
 
     void doRaytracing(vk::CommandBuffer& cmd);
 
@@ -96,9 +95,6 @@ struct Raytracer {
     //////////////////////////////////////////////////////////////////////////
 
     VulkanContext& vc;
-
-    vk::UniqueCommandBuffer m_ASBuildCommandBuffer;
-    vk::UniqueFence m_ASCommandBufferFence;
 
     compute::UniqueComputePass m_postprocess;
     compute::UniqueComputePass m_fxaa;

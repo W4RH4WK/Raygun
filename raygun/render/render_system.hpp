@@ -122,7 +122,7 @@ class RenderSystem {
     void updateMaterialBuffer(std::vector<Model*>& models);
 
     void beginFrame();
-    void endFrame(std::vector<vk::Semaphore> waitSemaphores);
+    void endFrame(std::vector<vk::Semaphore> waitSemaphores = {});
 
     void beginRenderPass();
     void endRenderPass();

@@ -56,23 +56,15 @@ void Raytracer::setupBottomLevelAS() const
     vc.waitForFence(*fence);
 }
 
-void Raytracer::buildAccelerationStructure(Scene& scene)
+void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, Scene& scene)
 {
-    vc.waitForFence(*m_ASCommandBufferFence);
-    vc.device->resetFences({*m_ASCommandBufferFence});
-    m_ASBuildCommandBuffer->begin(vk::CommandBufferBeginInfo{});
+    RG().profiler().resetQueries(cmd);
 
-    RG().profiler().resetQueries(*m_ASBuildCommandBuffer);
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildStart);
 
-    RG().profiler().writeTimestamp(*m_ASBuildCommandBuffer, TimestampQueryID::ASBuildStart);
+    topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
 
-    topLevelAS = std::make_unique<TopLevelAS>(*m_ASBuildCommandBuffer, scene);
-
-    RG().profiler().writeTimestamp(*m_ASBuildCommandBuffer, TimestampQueryID::ASBuildEnd);
-
-    m_ASBuildCommandBuffer->end();
-
-    vc.computeQueue->submit(*m_ASBuildCommandBuffer, *m_ASCommandBufferFence, *topLevelASSemaphore);
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildEnd);
 }
 
 void Raytracer::doRaytracing(vk::CommandBuffer& cmd)
@@ -248,10 +240,6 @@ void Raytracer::setupRaytracing()
     vk::PhysicalDeviceProperties2 props = {};
     props.pNext = static_cast<void*>(&raytracingProperties);
     vc.physicalDevice.getProperties2(&props);
-
-    topLevelASSemaphore = vc.device->createSemaphoreUnique({});
-    m_ASBuildCommandBuffer = vc.computeQueue->createCommandBuffer();
-    m_ASCommandBufferFence = vc.device->createFenceUnique({vk::FenceCreateFlagBits::eSignaled});
 }
 
 void Raytracer::setupRaytracingDescriptorSet()
