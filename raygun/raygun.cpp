@@ -285,7 +285,9 @@ void Raygun::finalizeLoadScene()
     m_resourceManager->clearUnusedModelsAndMaterials();
 
     m_renderSystem->resetUniformBuffer();
+
     m_renderSystem->setupModelBuffers();
+    m_renderSystem->raytracer().setupBottomLevelAS();
 
     m_timestamp = Clock::now();
 

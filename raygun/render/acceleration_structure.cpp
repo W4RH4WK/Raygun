@@ -102,6 +102,8 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, Scene& scene)
         // if no model, then we skip this, but might still render children
         if(!entity.model) return true;
 
+        RAYGUN_ASSERT(entity.model->bottomLevelAS);
+
         const auto instanceID = (uint32_t)instanceOffsetTable.size();
 
         // All instances currently use the same hit group.

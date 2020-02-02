@@ -58,6 +58,8 @@ struct Raytracer {
 
     //////////////////////////////////////////////////////////////////////////
 
+    void setupBottomLevelAS() const;
+
     void buildAccelerationStructure(Scene& scene);
 
     void doRaytracing(vk::CommandBuffer& cmd);

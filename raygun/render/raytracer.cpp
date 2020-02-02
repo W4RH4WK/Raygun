@@ -37,6 +37,25 @@
 
 namespace raygun::render {
 
+void Raytracer::setupBottomLevelAS() const
+{
+    auto cmd = vc.computeQueue->createCommandBuffer();
+    auto fence = vc.device->createFenceUnique({});
+
+    cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+
+    auto& models = RG().resourceManager().models();
+    for(auto& model: models) {
+        if(!model->bottomLevelAS) {
+            model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
+        }
+    }
+
+    cmd->end();
+    vc.computeQueue->submit(*cmd, *fence);
+    vc.waitForFence(*fence);
+}
+
 void Raytracer::buildAccelerationStructure(Scene& scene)
 {
     vc.waitForFence(*m_ASCommandBufferFence);
@@ -46,12 +65,6 @@ void Raytracer::buildAccelerationStructure(Scene& scene)
     RG().profiler().resetQueries(*m_ASBuildCommandBuffer);
 
     RG().profiler().writeTimestamp(*m_ASBuildCommandBuffer, TimestampQueryID::ASBuildStart);
-
-    // Create bottom level acceleration structures where needed.
-    scene.root->forEachEntity([&](Entity& entity) {
-        if(entity.model && !entity.model->bottomLevelAS)
-            entity.model->bottomLevelAS = std::make_unique<BottomLevelAS>(*m_ASBuildCommandBuffer, *entity.model->mesh);
-    });
 
     topLevelAS = std::make_unique<TopLevelAS>(*m_ASBuildCommandBuffer, scene);
 
