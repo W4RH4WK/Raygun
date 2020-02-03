@@ -6,7 +6,10 @@ function(raygun_add_compile_flags target)
     endif()
 
     if(MSVC)
+        target_compile_options(${target} PUBLIC /Zi)
+
         target_link_options(${target} PUBLIC
+            /DEBUG
             /NODEFAULTLIB:libcmt.lib
             /ignore:4075 # ignoring /INCREMENTAL due to /LTCG
             /ignore:4098 # defaultlib MSVCRT conflicts with use of other libs
