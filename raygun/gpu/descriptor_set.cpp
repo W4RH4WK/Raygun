@@ -61,6 +61,7 @@ void DescriptorSet::bind(uint32_t binding, const Buffer& buffer)
 {
     auto write = writeFromBinding(binding);
     write.setPBufferInfo(&buffer.descriptorInfo());
+    RAYGUN_ASSERT(write.descriptorCount == 1);
 
     m_pendingWrites.push_back(write);
 }
@@ -69,6 +70,7 @@ void DescriptorSet::bind(uint32_t binding, const Image& image)
 {
     auto write = writeFromBinding(binding);
     write.setPImageInfo(image.descriptorInfo().data());
+    RAYGUN_ASSERT(write.descriptorCount == 1);
 
     m_pendingWrites.push_back(write);
 }
@@ -77,6 +79,7 @@ void DescriptorSet::bind(uint32_t binding, const render::TopLevelAS& acceleratio
 {
     auto write = writeFromBinding(binding);
     write.setPNext(&accelerationStructure.info());
+    RAYGUN_ASSERT(write.descriptorCount == 1);
 
     m_pendingWrites.push_back(write);
 }
