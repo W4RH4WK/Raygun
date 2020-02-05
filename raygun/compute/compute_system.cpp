@@ -32,14 +32,14 @@
 
 namespace raygun::compute {
 
-void ComputePass::dispatch(vk::CommandBuffer& cmd, int width, int height, int depth)
+void ComputePass::dispatch(vk::CommandBuffer& cmd, uint32_t width, uint32_t height, uint32_t depth)
 {
     cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *computePipeline);
     cs.bindDescriptorSet(cmd);
     cmd.dispatch(width, height, depth);
 }
 
-ComputePass::ComputePass(ComputeSystem& cs, const string_view name) : cs(cs), computeShader(RG().resourceManager().loadShader(name))
+ComputePass::ComputePass(string_view name) : cs(RG().computeSystem()), computeShader(RG().resourceManager().loadShader(name))
 {
     auto shaderStageInfo = computeShader->shaderStageInfo(vk::ShaderStageFlagBits::eCompute);
 
@@ -114,7 +114,7 @@ void ComputeSystem::updateDescriptors(const gpu::Buffer& ubo, std::initializer_l
 
 UniqueComputePass ComputeSystem::createComputePass(string_view name)
 {
-    return UniqueComputePass(new ComputePass(*this, name));
+    return UniqueComputePass{new ComputePass{name}};
 }
 
 void ComputeSystem::bindDescriptorSet(vk::CommandBuffer& cmd)

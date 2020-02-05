@@ -35,18 +35,19 @@ class ComputeSystem;
 
 class ComputePass {
   public:
-    void dispatch(vk::CommandBuffer& cmd, int width, int height = 1, int depth = 1);
+    void dispatch(vk::CommandBuffer& cmd, uint32_t width, uint32_t height = 1, uint32_t depth = 1);
 
   private:
-    friend class ComputeSystem;
-
-    ComputePass(ComputeSystem& cs, string_view name);
-
-    ComputeSystem& cs;
+    ComputePass(string_view name);
 
     std::shared_ptr<gpu::Shader> computeShader;
     vk::UniquePipeline computePipeline;
+
+    ComputeSystem& cs;
+
+    friend class ComputeSystem;
 };
+
 using UniqueComputePass = std::unique_ptr<ComputePass>;
 
 class ComputeSystem {
@@ -58,7 +59,9 @@ class ComputeSystem {
     UniqueComputePass createComputePass(string_view name);
 
   private:
-    friend class ComputePass;
+    static constexpr int PRE_IMG_ELEMENTS = 1;
+    static constexpr int NUM_IMAGES = 7;
+    static constexpr int NUM_MIP_IMAGES = 0;
 
     void bindDescriptorSet(vk::CommandBuffer& cmd);
 
@@ -68,11 +71,9 @@ class ComputeSystem {
 
     vk::UniqueSampler linearClampedSampler;
 
-    static constexpr int PRE_IMG_ELEMENTS = 1;
-    static constexpr int NUM_IMAGES = 7;
-    static constexpr int NUM_MIP_IMAGES = 0;
-
     VulkanContext& vc;
+
+    friend class ComputePass;
 };
 
 using UniqueComputeSystem = std::unique_ptr<ComputeSystem>;
