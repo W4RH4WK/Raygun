@@ -84,3 +84,4 @@ raygun_enable_warnings(raygun)
 raygun_set_source_groups(raygun)
 
 add_subdirectory(example)
+set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT example)

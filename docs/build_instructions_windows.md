@@ -15,6 +15,4 @@
 
 4. Open the generated solution `raygun.sln` located inside the `build` directory.
 
-5. Set *example* as startup project.
-
-6. Release and debug configurations can now be built and run from within Visual Studio.
+5. Release and debug configurations can now be built and run from within Visual Studio.
