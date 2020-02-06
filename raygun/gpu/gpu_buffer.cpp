@@ -33,7 +33,7 @@ Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryProper
     RAYGUN_TRACE("Creating buffer: {} bytes", size);
 
     if(size == 0) {
-        RAYGUN_WARN("Buffers of size 0 byte not supported, setting size to 1 byte");
+        RAYGUN_DEBUG("Buffers of size 0 byte not supported, setting size to 1 byte");
         size = 1;
     }
 
