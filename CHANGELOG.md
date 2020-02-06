@@ -4,6 +4,7 @@
 
 - Remove experimental headless mode
 - Replace reference OpenAL implementation with OpenAL Soft
+- Use fade out effect on quit
 - Update Vulkan SDK to 1.2.131
 - CMake: Visual Studio solutions now feature debug symbols in release builds
 - CMake: Visual Studio solutions use warning level 3

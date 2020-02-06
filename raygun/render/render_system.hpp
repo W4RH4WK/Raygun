@@ -84,8 +84,8 @@ class RenderSystem {
     template<class F, typename... Args>
     void makeFade(Args&&... args)
     {
-        if(!m_curFade || m_curFade->over()) {
-            m_curFade = std::make_unique<F>(std::forward<Args>(args)...);
+        if(!m_currentFade || m_currentFade->over()) {
+            m_currentFade = std::make_unique<F>(std::forward<Args>(args)...);
         }
     }
 
@@ -115,7 +115,7 @@ class RenderSystem {
 
     VulkanContext& m_vc;
 
-    std::unique_ptr<Fade> m_curFade;
+    std::unique_ptr<Fade> m_currentFade;
 
     void updateUniformBuffer(const Camera& camera);
     void updateVertexAndIndexBuffer(std::set<Mesh*>& meshes);

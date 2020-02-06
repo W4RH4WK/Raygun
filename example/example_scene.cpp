@@ -68,7 +68,7 @@ void ExampleScene::showMenu()
     m_menu = m_uiFactory->window("menu", "Menu");
     m_uiFactory->addWithLayout(*m_menu, ui::Layout(vec2(0.5, 0.2), vec2(0, 0.3)), [&](ui::Factory& f) {
         f.button("Continue", [&] { camera->removeChild(m_menu); });
-        f.button("Quit", [] { RG().quit(); });
+        f.button("Quit", [] { RG().renderSystem().makeFade<render::FadeTransition>(0.4, []() { RG().quit(); }); });
     });
     m_menu->doLayout();
     m_menu->move(vec3{0.0f, 0.0f, -4.0f});

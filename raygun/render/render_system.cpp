@@ -221,8 +221,8 @@ void RenderSystem::updateUniformBuffer(const Camera& camera)
     ubo.time = (float)(fmod(RG().time(), (32.0 * glm::pi<double>())));
 
     // Fade
-    if(m_curFade) {
-        ubo.fadeColor = m_curFade->curColor();
+    if(m_currentFade) {
+        ubo.fadeColor = m_currentFade->curColor();
     }
 
     // UI
