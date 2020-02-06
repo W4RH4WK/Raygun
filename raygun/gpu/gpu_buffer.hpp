@@ -69,4 +69,19 @@ struct BufferRef {
     vk::DeviceSize elementCount() const { return size / elementSize; }
 };
 
+/// Copy the data from an std::vector to a dedicated GPU buffer.
+template<typename T>
+UniqueBuffer copyToBuffer(const std::vector<T>& data, vk::BufferUsageFlags usageFlags)
+{
+    constexpr auto memoryProperties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+
+    const auto bufferSize = data.size() * sizeof(data[0]);
+    auto buffer = std::make_unique<Buffer>(bufferSize, usageFlags, memoryProperties);
+
+    memcpy(buffer->map(), data.data(), bufferSize);
+    buffer->unmap();
+
+    return buffer;
+}
+
 } // namespace raygun::gpu
