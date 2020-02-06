@@ -3,9 +3,7 @@ function(raygun_add_compile_flags target)
         # -fno-strict-aliasing is needed because of type casts between structs
         # with the same memory layout.
         target_compile_options(${target} PUBLIC -fno-strict-aliasing)
-    endif()
-
-    if(MSVC)
+    elseif(MSVC)
         target_compile_options(${target} PUBLIC /Zi)
 
         target_link_options(${target} PUBLIC
@@ -21,5 +19,7 @@ endfunction()
 function(raygun_enable_warnings target)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
         target_compile_options(${target} PRIVATE -Wall -Wextra)
+    elseif(MSVC)
+        target_compile_options(${target} PRIVATE /W3)
     endif()
 endfunction()
