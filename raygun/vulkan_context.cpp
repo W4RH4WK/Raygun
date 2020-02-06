@@ -98,6 +98,7 @@ void VulkanContext::setupInstance()
     appInfo.setApplicationVersion(VK_MAKE_VERSION(APP_VERSION_MAJOR, APP_VERSION_MINOR, APP_VERSION_PATCH));
     appInfo.setPEngineName(RAYGUN_NAME);
     appInfo.setEngineVersion(VK_MAKE_VERSION(RAYGUN_VERSION_MAJOR, RAYGUN_VERSION_MINOR, RAYGUN_VERSION_PATCH));
+    appInfo.setApiVersion(VK_API_VERSION_1_2);
 
     vk::InstanceCreateInfo info = {};
     info.setEnabledLayerCount((uint32_t)layers.size());
