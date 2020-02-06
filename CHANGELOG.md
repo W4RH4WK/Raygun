@@ -4,6 +4,10 @@
 
 - Remove experimental headless mode
 - Replace reference OpenAL implementation with OpenAL Soft
+- Update Vulkan SDK to 1.2.131
+- CMake: Visual Studio solutions now feature debug symbols in release builds
+- CMake: Visual Studio solutions use warning level 3
+- Fix render pass attachment initial layout warning
 
 ## 1.1.0 Linux Support
 
