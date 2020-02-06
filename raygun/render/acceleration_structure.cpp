@@ -149,7 +149,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
     m_instances = std::make_unique<gpu::Buffer>(instanceBufferSize, vk::BufferUsageFlagBits::eRayTracingNV,
                                                 vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-    gen.Generate(*vc.device, cmd, *m_structure, *m_scratch, 0, m_result->memory(), *m_instances, m_instances->memory());
+    gen.Generate(*vc.device, cmd, *m_structure, VkBuffer(*m_scratch), 0, m_result->memory(), VkBuffer(*m_instances), m_instances->memory());
 
     // Setup instance offset table.
     // TODO: Barrier required?
@@ -191,7 +191,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 
     m_result = std::make_unique<gpu::Buffer>(resultSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-    gen.Generate(*vc.device, cmd, *m_structure, *m_scratch, 0, m_result->memory());
+    gen.Generate(*vc.device, cmd, *m_structure, VkBuffer(*m_scratch), 0, m_result->memory());
 }
 
 } // namespace raygun::render

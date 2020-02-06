@@ -22,8 +22,6 @@
 
 #pragma once
 
-#include <nv_helpers_vk/ShaderBindingTableGenerator.h>
-
 #include "raygun/compute/compute_system.hpp"
 #include "raygun/gpu/descriptor_set.hpp"
 #include "raygun/gpu/gpu_buffer.hpp"
@@ -45,13 +43,9 @@ struct Raytracer {
     vk::UniquePipeline rtPipeline;
     vk::UniquePipelineLayout rtPipelineLayout;
 
-    uint32_t rayGenIndex = 0;
+    uint32_t raygenGroupIndex = 0;
+    uint32_t missGroupIndex = 0;
     uint32_t hitGroupIndex = 0;
-    uint32_t missIndex = 0;
-    uint32_t shadowMissIndex = 0;
-    uint32_t shadowHitGroupIndex = 0;
-
-    nv_helpers_vk::ShaderBindingTableGenerator rtSbt;
 
     gpu::UniqueBuffer sbtBuffer;
 
@@ -81,8 +75,6 @@ struct Raytracer {
 
   private:
     void setupRaytracingImages();
-
-    void setupRaytracing();
 
     void setupRaytracingDescriptorSet();
 
@@ -117,6 +109,8 @@ struct Raytracer {
 
     gpu::Image* m_shownImage = &*m_finalImage;
     bool m_useFXAA = true;
+
+    std::vector<vk::RayTracingShaderGroupCreateInfoNV> m_rtShaderGroups;
 };
 
 using UniqueRaytracer = std::unique_ptr<Raytracer>;

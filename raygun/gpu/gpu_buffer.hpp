@@ -32,7 +32,9 @@ class Buffer {
     Buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryType);
     ~Buffer();
 
-    operator VkBuffer() { return *m_buffer; }
+    operator vk::Buffer() { return *m_buffer; }
+
+    explicit operator VkBuffer() { return *m_buffer; }
 
     vk::DeviceSize size() const { return m_info.range; }
 

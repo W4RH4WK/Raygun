@@ -184,7 +184,7 @@ void VulkanContext::selectQueueFamily()
 {
     auto families = physicalDevice.getQueueFamilyProperties();
 
-    for(size_t i = 0; i < families.size(); ++i) {
+    for(uint32_t i = 0; i < (uint32_t)families.size(); ++i) {
         const auto& family = families[i];
 
         if(graphicsQueueFamilyIndex == UINT32_MAX && family.queueFlags & vk::QueueFlagBits::eGraphics) {

@@ -22,7 +22,6 @@
 
 #include "raygun/render/raytracer.hpp"
 
-#include <nv_helpers_vk/RaytracingPipelineGenerator.h>
 #include <nv_helpers_vk/VKHelpers.h>
 
 #include "raygun/entity.hpp"
@@ -83,18 +82,17 @@ void Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, *rtPipelineLayout, 0, descriptorSet.set(), {});
 
-    const VkDeviceSize rayGenOffset = rtSbt.GetRayGenOffset();
-    const VkDeviceSize missOffset = rtSbt.GetMissOffset();
-    const VkDeviceSize missStride = rtSbt.GetMissEntrySize();
-    const VkDeviceSize hitGroupOffset = rtSbt.GetHitGroupOffset();
-    const VkDeviceSize hitGroupStride = rtSbt.GetHitGroupEntrySize();
-
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalStart);
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyStart);
 
-    vkCmdTraceRaysNV(cmd, *sbtBuffer, rayGenOffset, *sbtBuffer, missOffset, missStride, *sbtBuffer, hitGroupOffset, hitGroupStride, VK_NULL_HANDLE, 0, 0,
-                     vc.windowSize.width, vc.windowSize.height, 1);
+    const auto stride = raytracingProperties.shaderGroupHandleSize;
+
+    cmd.traceRaysNV(*sbtBuffer, raygenGroupIndex * stride,       //
+                    *sbtBuffer, missGroupIndex * stride, stride, //
+                    *sbtBuffer, hitGroupIndex * stride, stride,  //
+                    *sbtBuffer, 0, 0,                            //
+                    vc.windowSize.width, vc.windowSize.height, 1);
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyEnd);
 
@@ -159,17 +157,14 @@ void Raytracer::imageShaderWriteBarrier(vk::CommandBuffer& cmd, vk::Image& image
 
 Raytracer::Raytracer() : vc(RG().vc())
 {
-    setupRaytracingImages();
-
-    setupRaytracing();
+    auto properties = vc.physicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPropertiesNV>();
+    raytracingProperties = properties.get<vk::PhysicalDeviceRayTracingPropertiesNV>();
 
     setupRaytracingDescriptorSet();
 
-    setupRaytracingPipeline();
-
-    setupShaderBindingTable();
-
     setupPostprocessing();
+
+    resize();
 
     RAYGUN_INFO("Raytracer initialized");
 }
@@ -182,8 +177,6 @@ Raytracer::~Raytracer()
 void Raytracer::resize()
 {
     setupRaytracingImages();
-
-    setupRaytracing();
 
     setupRaytracingPipeline();
 
@@ -235,13 +228,6 @@ void Raytracer::setupRaytracingImages()
     m_roughColorsB = std::make_unique<gpu::Image>(vc.windowSize);
 }
 
-void Raytracer::setupRaytracing()
-{
-    vk::PhysicalDeviceProperties2 props = {};
-    props.pNext = static_cast<void*>(&raytracingProperties);
-    vc.physicalDevice.getProperties2(&props);
-}
-
 void Raytracer::setupRaytracingDescriptorSet()
 {
     descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, 1, vk::DescriptorType::eAccelerationStructureNV,
@@ -262,58 +248,95 @@ void Raytracer::setupRaytracingDescriptorSet()
     descriptorSet.generate();
 }
 
+namespace {
+
+    vk::RayTracingShaderGroupCreateInfoNV generalShaderGroup(uint32_t generalShaderIndex)
+    {
+        vk::RayTracingShaderGroupCreateInfoNV info;
+        info.setGeneralShader(generalShaderIndex);
+        info.setClosestHitShader(VK_SHADER_UNUSED_NV);
+        info.setAnyHitShader(VK_SHADER_UNUSED_NV);
+        info.setIntersectionShader(VK_SHADER_UNUSED_NV);
+
+        return info;
+    }
+
+    vk::RayTracingShaderGroupCreateInfoNV HitShaderGroup(uint32_t closestHitShaderIndex)
+    {
+        vk::RayTracingShaderGroupCreateInfoNV info{vk::RayTracingShaderGroupTypeNV::eTrianglesHitGroup};
+        info.setGeneralShader(VK_SHADER_UNUSED_NV);
+        info.setClosestHitShader(closestHitShaderIndex);
+        info.setAnyHitShader(VK_SHADER_UNUSED_NV);
+        info.setIntersectionShader(VK_SHADER_UNUSED_NV);
+
+        return info;
+    }
+
+} // namespace
+
 void Raytracer::setupRaytracingPipeline()
 {
-    nv_helpers_vk::RayTracingPipelineGenerator gen;
+    m_rtShaderGroups.clear();
 
-    const auto rayGen = RG().resourceManager().loadShader("raygen.rgen");
-    rayGenIndex = gen.AddRayGenShaderStage(*rayGen->shaderModule);
+    std::vector<vk::PipelineShaderStageCreateInfo> stages;
 
-    const auto miss = RG().resourceManager().loadShader("miss.rmiss");
-    missIndex = gen.AddMissShaderStage(*miss->shaderModule);
+    raygenGroupIndex = (uint32_t)m_rtShaderGroups.size();
+    const auto raygenShader = RG().resourceManager().loadShader("raygen.rgen");
+    {
+        m_rtShaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
+        stages.push_back(raygenShader->shaderStageInfo(vk::ShaderStageFlagBits::eRaygenNV));
+    }
 
-    const auto shadowMiss = RG().resourceManager().loadShader("shadowMiss.rmiss");
-    shadowMissIndex = gen.AddMissShaderStage(*shadowMiss->shaderModule);
+    missGroupIndex = (uint32_t)m_rtShaderGroups.size();
+    const auto missShader = RG().resourceManager().loadShader("miss.rmiss");
+    {
+        m_rtShaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
+        stages.push_back(missShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissNV));
+    }
 
-    hitGroupIndex = gen.StartHitGroup();
-    const auto closestHit = RG().resourceManager().loadShader("closesthit.rchit");
-    gen.AddHitShaderStage(*closestHit->shaderModule, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    gen.EndHitGroup();
+    const auto shadowMissShader = RG().resourceManager().loadShader("shadowMiss.rmiss");
+    {
+        m_rtShaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
+        stages.push_back(shadowMissShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissNV));
+    }
 
-    shadowHitGroupIndex = gen.StartHitGroup();
-    gen.EndHitGroup();
+    hitGroupIndex = (uint32_t)m_rtShaderGroups.size();
+    const auto closestHitShader = RG().resourceManager().loadShader("closesthit.rchit");
+    {
+        m_rtShaderGroups.push_back(HitShaderGroup((uint32_t)stages.size()));
+        stages.push_back(closestHitShader->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitNV));
+    }
 
-    gen.SetMaxRecursionDepth(7);
+    {
+        vk::PipelineLayoutCreateInfo info = {};
+        info.setSetLayoutCount(1);
+        info.setPSetLayouts(&descriptorSet.layout());
 
-    VkPipeline pipeline;
-    VkPipelineLayout pipelineLayout;
+        rtPipelineLayout = vc.device->createPipelineLayoutUnique(info);
+    }
 
-    gen.Generate(*vc.device, descriptorSet.layout(), &pipeline, &pipelineLayout);
+    {
+        vk::RayTracingPipelineCreateInfoNV info = {};
+        info.setStageCount((uint32_t)stages.size());
+        info.setPStages(stages.data());
+        info.setGroupCount((uint32_t)m_rtShaderGroups.size());
+        info.setPGroups(m_rtShaderGroups.data());
+        info.setMaxRecursionDepth(7);
+        info.setLayout(*rtPipelineLayout);
 
-    rtPipeline = gpu::wrapUnique<vk::Pipeline>(pipeline, *vc.device);
-    rtPipelineLayout = gpu::wrapUnique<vk::PipelineLayout>(pipelineLayout, *vc.device);
+        rtPipeline = vc.device->createRayTracingPipelineNVUnique(nullptr, info);
+    }
 }
 
 void Raytracer::setupShaderBindingTable()
 {
-    // Reset generator
-    rtSbt = nv_helpers_vk::ShaderBindingTableGenerator{};
+    const auto sbtSize = m_rtShaderGroups.size() * raytracingProperties.shaderGroupHandleSize;
 
-    rtSbt.AddRayGenerationProgram(rayGenIndex, {});
+    sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eHostVisible);
 
-    rtSbt.AddMissProgram(missIndex, {});
+    vc.device->getRayTracingShaderGroupHandlesNV(*rtPipeline, 0, (uint32_t)m_rtShaderGroups.size(), sbtSize, sbtBuffer->map());
 
-    rtSbt.AddMissProgram(shadowMissIndex, {});
-
-    rtSbt.AddHitGroup(hitGroupIndex, {});
-
-    rtSbt.AddHitGroup(shadowHitGroupIndex, {});
-
-    const auto sbtSize = rtSbt.ComputeSBTSize(raytracingProperties);
-
-    sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible);
-
-    rtSbt.Generate(*vc.device, *rtPipeline, sbtBuffer->memory());
+    sbtBuffer->unmap();
 }
 
 void Raytracer::setupPostprocessing()
