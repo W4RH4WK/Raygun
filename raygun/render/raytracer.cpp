@@ -63,6 +63,8 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 
     topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
 
+    accelerationStructureBarrier(cmd);
+
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildEnd);
 }
 

@@ -31,36 +31,30 @@ struct Scene;
 
 namespace raygun::render {
 
-struct Dummy;
-
 class TopLevelAS {
   public:
     TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene);
-    ~TopLevelAS();
 
-    const vk::AccelerationStructureNV& structure() const { return *m_structure; }
+    operator vk::AccelerationStructureNV() const { return *m_structure; }
 
     const gpu::Buffer& instanceOffsetTable() const { return *m_instanceOffsetTable; }
 
-    const vk::WriteDescriptorSetAccelerationStructureNV& info() const { return m_info; }
+    const vk::WriteDescriptorSetAccelerationStructureNV& descriptorInfo() const { return m_descriptorInfo; }
 
   private:
+    vk::AccelerationStructureInfoNV m_info = {};
+    vk::WriteDescriptorSetAccelerationStructureNV m_descriptorInfo = {};
+
     vk::UniqueAccelerationStructureNV m_structure;
-    gpu::UniqueBuffer m_scratch;
-    gpu::UniqueBuffer m_result;
+    vk::UniqueDeviceMemory m_memory;
     gpu::UniqueBuffer m_instances;
+    gpu::UniqueBuffer m_scratch;
 
     /// Shader relevant data is commonly combined into large buffers (e.g. one
     /// vertex buffer for all vertices). In order to find the data corresponding
     /// to a specific primitive, the offsets in these buffers must be known.
     /// This lookup table provides the needed offsets for each instance.
     gpu::UniqueBuffer m_instanceOffsetTable;
-
-    vk::WriteDescriptorSetAccelerationStructureNV m_info = {};
-
-    /// At least one entry in the TopLevelAS is required. This dummy is added if
-    /// necessary.
-    std::unique_ptr<Dummy> m_dummy;
 };
 
 using UniqueTopLevelAS = std::unique_ptr<TopLevelAS>;
@@ -69,12 +63,12 @@ class BottomLevelAS {
   public:
     BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh);
 
-    const vk::AccelerationStructureNV& structure() const { return *m_structure; }
+    operator vk::AccelerationStructureNV() const { return *m_structure; }
 
   private:
     vk::UniqueAccelerationStructureNV m_structure;
+    vk::UniqueDeviceMemory m_memory;
     gpu::UniqueBuffer m_scratch;
-    gpu::UniqueBuffer m_result;
 };
 
 using UniqueBottomLevelAS = std::unique_ptr<BottomLevelAS>;
@@ -83,5 +77,7 @@ struct InstanceOffsetTableEntry {
     using uint = uint32_t;
 #include "resources/shaders/instance_offset_table.def"
 };
+
+void accelerationStructureBarrier(const vk::CommandBuffer& cmd);
 
 } // namespace raygun::render

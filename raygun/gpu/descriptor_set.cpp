@@ -78,7 +78,7 @@ void DescriptorSet::bind(uint32_t binding, const Image& image)
 void DescriptorSet::bind(uint32_t binding, const render::TopLevelAS& accelerationStructure)
 {
     auto write = writeFromBinding(binding);
-    write.setPNext(&accelerationStructure.info());
+    write.setPNext(&accelerationStructure.descriptorInfo());
     RAYGUN_ASSERT(write.descriptorCount == 1);
 
     m_pendingWrites.push_back(write);

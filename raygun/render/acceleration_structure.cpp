@@ -22,9 +22,6 @@
 
 #include "raygun/render/acceleration_structure.hpp"
 
-#include <nv_helpers_vk/BottomLevelASGenerator.h>
-#include <nv_helpers_vk/TopLevelASGenerator.h>
-
 #include "raygun/gpu/gpu_utils.hpp"
 #include "raygun/raygun.hpp"
 #include "raygun/render/model.hpp"
@@ -32,67 +29,98 @@
 
 namespace raygun::render {
 
-struct Dummy {
-    Dummy(const vk::CommandBuffer& cmd)
+namespace {
+
+    // See https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/chap33.html#acceleration-structure
+    struct VkGeometryInstanceNV {
+        float transform[12];
+        uint32_t instanceCustomIndex : 24;
+        uint32_t mask : 8;
+        uint32_t instanceOffset : 24;
+        uint32_t flags : 8;
+        uint64_t accelerationStructureHandle;
+    };
+    static_assert(sizeof(VkGeometryInstanceNV) == 64);
+
+    VkGeometryInstanceNV instanceFromEntity(vk::Device device, const Entity& entity, uint32_t instanceId)
     {
-        auto mesh = std::make_shared<Mesh>();
+        RAYGUN_ASSERT(entity.model->bottomLevelAS);
 
-        auto& vertices = mesh->vertices;
-        vertices.resize(3);
-        vertices[0].position = {0.0f, 0.0f, 0.0f};
-        vertices[0].normal = {0.0f, 0.0f, 1.0f};
-        vertices[1].position = {1.0f, 0.0f, 0.0f};
-        vertices[1].normal = {0.0f, 0.0f, 1.0f};
-        vertices[2].position = {1.0f, 1.0f, 0.0f};
-        vertices[2].normal = {0.0f, 0.0f, 1.0f};
+        VkGeometryInstanceNV instance = {};
+        instance.instanceCustomIndex = instanceId;
+        instance.instanceOffset = 0;
+        instance.mask = 0xff;
+        instance.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
 
-        auto& indices = mesh->indices;
-        indices.resize(3);
-        indices[0] = 0;
-        indices[1] = 1;
-        indices[2] = 2;
+        // The expected matrix is a row-major 4x3 matrix.
+        const auto transform = glm::transpose(entity.globalTransform().toMat4());
+        memcpy(&instance.transform, &transform, sizeof(instance.transform));
 
-        vertexBuffer = std::make_unique<gpu::Buffer>(vertices.size() * sizeof(render::Vertex),
-                                                     vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
-                                                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+        const auto result = device.getAccelerationStructureHandleNV(*entity.model->bottomLevelAS, sizeof(instance.accelerationStructureHandle),
+                                                                    &instance.accelerationStructureHandle);
+        RAYGUN_ASSERT(result == vk::Result::eSuccess);
 
-        indexBuffer =
-            std::make_unique<gpu::Buffer>(indices.size() * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
-                                          vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-        memcpy(vertexBuffer->map(), vertices.data(), vertices.size() * sizeof(vertices[0]));
-        vertexBuffer->unmap();
-
-        memcpy(indexBuffer->map(), indices.data(), indices.size() * sizeof(indices[0]));
-        indexBuffer->unmap();
-
-        mesh->vertexBufferRef.buffer = *vertexBuffer;
-        mesh->vertexBufferRef.offset = 0;
-        mesh->vertexBufferRef.size = vertices.size() * sizeof(vertices[0]);
-        mesh->vertexBufferRef.elementSize = sizeof(vertices[0]);
-
-        mesh->indexBufferRef.buffer = *indexBuffer;
-        mesh->indexBufferRef.offset = 0;
-        mesh->indexBufferRef.size = indices.size() * sizeof(indices[0]);
-        mesh->indexBufferRef.elementSize = sizeof(indices[0]);
-
-        model.mesh = mesh;
-        model.bottomLevelAS = std::make_unique<BottomLevelAS>(cmd, *mesh);
+        return instance;
     }
 
-    render::Model model;
-    gpu::UniqueBuffer vertexBuffer;
-    gpu::UniqueBuffer indexBuffer;
-};
+    std::pair<vk::UniqueAccelerationStructureNV, vk::UniqueDeviceMemory> createAccelerationStructure(const vk::AccelerationStructureInfoNV info)
+    {
+        VulkanContext& vc = RG().vc();
+
+        vk::AccelerationStructureCreateInfoNV createInfo = {};
+        createInfo.setInfo(info);
+
+        auto structure = vc.device->createAccelerationStructureNVUnique(createInfo);
+
+        // allocate memory
+        vk::UniqueDeviceMemory memory;
+        {
+            vk::AccelerationStructureMemoryRequirementsInfoNV memInfo = {};
+            memInfo.setAccelerationStructure(*structure);
+
+            const auto memoryRequirements = vc.device->getAccelerationStructureMemoryRequirementsNV(memInfo).memoryRequirements;
+
+            vk::MemoryAllocateInfo allocInfo = {};
+            allocInfo.setAllocationSize(memoryRequirements.size);
+            allocInfo.setMemoryTypeIndex(gpu::selectMemoryType(vc.physicalDevice, memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
+
+            memory = vc.device->allocateMemoryUnique(allocInfo);
+        }
+
+        // bind memory
+        {
+            vk::BindAccelerationStructureMemoryInfoNV bindInfo = {};
+            bindInfo.setAccelerationStructure(*structure);
+            bindInfo.setMemory(*memory);
+
+            vc.device->bindAccelerationStructureMemoryNV(bindInfo);
+        }
+
+        return {std::move(structure), std::move(memory)};
+    }
+
+    gpu::UniqueBuffer createScratchBuffer(const vk::AccelerationStructureNV& structure)
+    {
+        VulkanContext& vc = RG().vc();
+
+        vk::AccelerationStructureMemoryRequirementsInfoNV memInfo = {};
+        memInfo.setAccelerationStructure(structure);
+        memInfo.setType(vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch);
+
+        const auto scratchSize = vc.device->getAccelerationStructureMemoryRequirementsNV(memInfo).memoryRequirements.size;
+        return std::make_unique<gpu::Buffer>(scratchSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    }
+
+} // namespace
 
 TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
 {
     VulkanContext& vc = RG().vc();
 
-    nv_helpers_vk::TopLevelASGenerator gen;
-
+    std::vector<VkGeometryInstanceNV> instances;
     std::vector<InstanceOffsetTableEntry> instanceOffsetTable;
 
+    // Grab instances from scene.
     scene.root->forEachEntity([&](const Entity& entity) {
         // if set to invisible, do not descend to children
         if(!entity.isVisible()) return false;
@@ -102,12 +130,8 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
         // if no model, then we skip this, but might still render children
         if(!entity.model) return true;
 
-        RAYGUN_ASSERT(entity.model->bottomLevelAS);
-
-        const auto instanceID = (uint32_t)instanceOffsetTable.size();
-
-        // All instances currently use the same hit group.
-        gen.AddInstance(entity.model->bottomLevelAS->structure(), entity.globalTransform().toMat4(), instanceID, 0);
+        const auto instance = instanceFromEntity(*vc.device, entity, (uint32_t)instances.size());
+        instances.push_back(instance);
 
         const auto& vertexBufferRef = entity.model->mesh->vertexBufferRef;
         const auto& indexBufferRef = entity.model->mesh->indexBufferRef;
@@ -117,81 +141,80 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
         entry.vertexBufferOffset = (uint32_t)(vertexBufferRef.offset / vertexBufferRef.elementSize);
         entry.indexBufferOffset = (uint32_t)(indexBufferRef.offset / indexBufferRef.elementSize);
         entry.materialBufferOffset = (uint32_t)(materialBufferRef.offset / materialBufferRef.elementSize);
+
         return true;
     });
 
-    // Since we need at least one instance, a dummy is added when necessary.
-    if(instanceOffsetTable.empty()) {
-        m_dummy = std::make_unique<Dummy>(cmd);
-
-        // No ray should be able to hit this.
-        const auto transform = glm::scale(mat4{1.0f}, zero());
-        gen.AddInstance(m_dummy->model.bottomLevelAS->structure(), transform, 1, 0);
-
-        instanceOffsetTable.push_back({});
-    }
-
+    // Setup acceleration structure.
     {
-        const auto structure = gen.CreateAccelerationStructure(*vc.device);
-        m_structure = gpu::wrapUnique<vk::AccelerationStructureNV>(structure, *vc.device);
+        m_info.setType(vk::AccelerationStructureTypeNV::eTopLevel);
+        m_info.setInstanceCount((uint32_t)instances.size());
+        m_info.setFlags(vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace);
+
+        vk::AccelerationStructureCreateInfoNV createInfo = {};
+        createInfo.setInfo(m_info);
+
+        std::tie(m_structure, m_memory) = createAccelerationStructure(m_info);
     }
 
-    m_info.setAccelerationStructureCount(1);
-    m_info.setPAccelerationStructures(&*m_structure);
+    m_scratch = createScratchBuffer(*m_structure);
 
-    vk::DeviceSize scratchSize, resultSize, instanceBufferSize;
-    gen.ComputeASBufferSizes(*vc.device, *m_structure, &scratchSize, &resultSize, &instanceBufferSize);
+    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingNV);
+    m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer);
 
-    m_scratch = std::make_unique<gpu::Buffer>(scratchSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    cmd.buildAccelerationStructureNV(m_info, *m_instances, 0, false, *m_structure, nullptr, *m_scratch, 0);
 
-    m_result = std::make_unique<gpu::Buffer>(resultSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-    m_instances = std::make_unique<gpu::Buffer>(instanceBufferSize, vk::BufferUsageFlagBits::eRayTracingNV,
-                                                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-    gen.Generate(*vc.device, cmd, *m_structure, VkBuffer(*m_scratch), 0, m_result->memory(), VkBuffer(*m_instances), m_instances->memory());
-
-    // Setup instance offset table.
-    // TODO: Barrier required?
-    {
-        const auto bufferSize = instanceOffsetTable.size() * sizeof(instanceOffsetTable[0]);
-
-        m_instanceOffsetTable = std::make_unique<gpu::Buffer>(bufferSize, vk::BufferUsageFlagBits::eStorageBuffer,
-                                                              vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-        memcpy(m_instanceOffsetTable->map(), instanceOffsetTable.data(), bufferSize);
-        m_instanceOffsetTable->unmap();
-    }
+    m_descriptorInfo.setAccelerationStructureCount(1);
+    m_descriptorInfo.setPAccelerationStructures(&*m_structure);
 }
-
-TopLevelAS::~TopLevelAS() = default;
 
 BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 {
     VulkanContext& vc = RG().vc();
 
-    nv_helpers_vk::BottomLevelASGenerator gen;
+    vk::GeometryTrianglesNV triangles = {};
+    triangles.setVertexData(mesh.vertexBufferRef.buffer);
+    triangles.setVertexOffset(mesh.vertexBufferRef.offset);
+    triangles.setVertexCount(mesh.vertexBufferRef.elementCount());
+    triangles.setVertexStride(mesh.vertexBufferRef.elementSize);
+    triangles.setVertexFormat(vk::Format::eR32G32B32Sfloat);
+    triangles.setIndexData(mesh.indexBufferRef.buffer);
+    triangles.setIndexOffset(mesh.indexBufferRef.offset);
+    triangles.setIndexCount(mesh.indexBufferRef.elementCount());
+    triangles.setIndexType(vk::IndexType::eUint32);
 
-    const auto vertexCount = (uint32_t)mesh.vertexBufferRef.elementCount();
-    const auto indexCount = (uint32_t)mesh.indexBufferRef.elementCount();
-    const auto vertexSize = mesh.vertexBufferRef.elementSize;
+    vk::GeometryDataNV geometryData = {};
+    geometryData.setTriangles(triangles);
 
-    gen.AddVertexBuffer(mesh.vertexBufferRef.buffer, mesh.vertexBufferRef.offset, vertexCount, vertexSize, mesh.indexBufferRef.buffer,
-                        mesh.indexBufferRef.offset, indexCount, nullptr, 0);
+    vk::GeometryNV geometry = {};
+    geometry.setGeometry(geometryData);
+    geometry.setGeometryType(vk::GeometryTypeNV::eTriangles);
+    geometry.setFlags(vk::GeometryFlagBitsNV::eOpaque);
 
-    {
-        const auto structure = gen.CreateAccelerationStructure(*vc.device);
-        m_structure = gpu::wrapUnique<vk::AccelerationStructureNV>(structure, *vc.device);
-    }
+    vk::AccelerationStructureInfoNV info = {};
+    info.setType(vk::AccelerationStructureTypeNV::eBottomLevel);
+    info.setGeometryCount(1);
+    info.setPGeometries(&geometry);
+    info.setFlags(vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace);
 
-    vk::DeviceSize scratchSize, resultSize;
-    gen.ComputeASBufferSizes(*vc.device, *m_structure, &scratchSize, &resultSize);
+    vk::AccelerationStructureCreateInfoNV createInfo = {};
+    createInfo.setInfo(info);
 
-    m_scratch = std::make_unique<gpu::Buffer>(scratchSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    std::tie(m_structure, m_memory) = createAccelerationStructure(info);
 
-    m_result = std::make_unique<gpu::Buffer>(resultSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_scratch = createScratchBuffer(*m_structure);
 
-    gen.Generate(*vc.device, cmd, *m_structure, VkBuffer(*m_scratch), 0, m_result->memory());
+    cmd.buildAccelerationStructureNV(info, nullptr, 0, false, *m_structure, nullptr, *m_scratch, 0);
+}
+
+void accelerationStructureBarrier(const vk::CommandBuffer& cmd)
+{
+    vk::MemoryBarrier memoryBarrier = {};
+    memoryBarrier.setSrcAccessMask(vk::AccessFlagBits::eAccelerationStructureReadNV | vk::AccessFlagBits::eAccelerationStructureReadNV);
+    memoryBarrier.setDstAccessMask(vk::AccessFlagBits::eAccelerationStructureReadNV | vk::AccessFlagBits::eAccelerationStructureReadNV);
+
+    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, {memoryBarrier},
+                        {}, {});
 }
 
 } // namespace raygun::render

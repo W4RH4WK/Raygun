@@ -68,7 +68,7 @@ struct BufferRef {
     vk::DeviceSize size = 0;
     vk::DeviceSize elementSize = 1;
 
-    vk::DeviceSize elementCount() const { return size / elementSize; }
+    uint32_t elementCount() const { return (uint32_t)(size / elementSize); }
 };
 
 /// Copy the data from an std::vector to a dedicated GPU buffer.
