@@ -22,8 +22,6 @@
 
 #include "raygun/render/raytracer.hpp"
 
-#include <nv_helpers_vk/VKHelpers.h>
-
 #include "raygun/entity.hpp"
 #include "raygun/gpu/gpu_utils.hpp"
 #include "raygun/logging.hpp"
@@ -147,14 +145,15 @@ void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::
 
 void Raytracer::imageShaderWriteBarrier(vk::CommandBuffer& cmd, vk::Image& image)
 {
-    VkImageSubresourceRange subresourceRange;
-    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresourceRange.baseMipLevel = 0;
-    subresourceRange.levelCount = 1;
-    subresourceRange.baseArrayLayer = 0;
-    subresourceRange.layerCount = 1;
+    vk::ImageMemoryBarrier barrier = {};
+    barrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
+    barrier.setDstAccessMask(vk::AccessFlagBits::eShaderWrite);
+    barrier.setOldLayout(vk::ImageLayout::eUndefined);
+    barrier.setNewLayout(vk::ImageLayout::eGeneral);
+    barrier.setImage(image);
+    barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
 
-    nv_helpers_vk::imageBarrier(cmd, image, subresourceRange, 0, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, {barrier});
 }
 
 Raytracer::Raytracer() : vc(RG().vc())

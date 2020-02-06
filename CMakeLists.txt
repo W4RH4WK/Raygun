@@ -32,7 +32,6 @@ add_subdirectory(vendor/glm)
 add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/imGuIZMO)
 add_subdirectory(vendor/json)
-add_subdirectory(vendor/nv_helpers_vk)
 add_subdirectory(vendor/OpenAL)
 add_subdirectory(vendor/opus)
 add_subdirectory(vendor/PhysX)
@@ -55,7 +54,6 @@ target_link_libraries(raygun PUBLIC
     imgui
     imGuIZMO
     json
-    nv_helpers_vk
     opus
     OpenAL
     PhysX
