@@ -35,11 +35,6 @@ namespace raygun::render {
 /// Renderer which is responsible for ray tracing.
 struct Raytracer {
     Raytracer();
-    ~Raytracer();
-
-    void resize();
-
-    void reload();
 
     void setupBottomLevelAS();
 

@@ -57,6 +57,23 @@ RenderSystem::~RenderSystem()
     vc.waitIdle();
 }
 
+void RenderSystem::reload()
+{
+    vc.waitIdle();
+
+    vc.windowSize = RG().window().size();
+
+    RG().scene().camera->updateProjection();
+
+    m_swapchain.reset();
+    m_swapchain = std::make_unique<Swapchain>(*this);
+
+    m_raytracer.reset();
+    m_raytracer = std::make_unique<Raytracer>();
+
+    RAYGUN_INFO("Render System reloaded");
+}
+
 void RenderSystem::preSimulation()
 {
     m_imGuiRenderer->newFrame();
@@ -195,18 +212,6 @@ void RenderSystem::resetUniformBuffer()
     ubo.lightDir = glm::normalize(vec3(.4f, -.6f, -.8f));
     ubo.numSamples = 1;
     ubo.maxRecursions = 5;
-}
-
-void RenderSystem::resize()
-{
-    vc.waitIdle();
-
-    vc.windowSize = RG().window().size();
-
-    RG().scene().camera->updateProjection();
-
-    m_swapchain->resize();
-    m_raytracer->resize();
 }
 
 void RenderSystem::updateUniformBuffer(const Camera& camera)
@@ -355,7 +360,7 @@ void RenderSystem::presentFrame()
     }
     catch(const vk::OutOfDateKHRError&) {
         RAYGUN_DEBUG("Swap chain out of date");
-        resize();
+        reload();
     }
 }
 

@@ -57,4 +57,6 @@ uint32_t selectMemoryType(const vk::PhysicalDevice& physicalDevice, uint32_t sup
 vk::ImageSubresourceRange mipImageSubresourceRange(uint32_t mipIndex, uint32_t mipCount = 1);
 vk::ImageSubresourceRange defaultImageSubresourceRange();
 
+vk::ImageSubresourceLayers defaultImageSubresourceLayers();
+
 } // namespace raygun::gpu

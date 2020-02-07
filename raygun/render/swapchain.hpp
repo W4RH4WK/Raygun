@@ -32,8 +32,6 @@ class Swapchain {
   public:
     explicit Swapchain(RenderSystem& renderSystem);
 
-    void resize();
-
     uint32_t nextImageIndex(vk::Semaphore imageAcquiredSemaphore);
 
     uint32_t imageCount() const { return (uint32_t)m_images.size(); }

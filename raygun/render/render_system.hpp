@@ -45,6 +45,8 @@ class RenderSystem {
     RenderSystem();
     ~RenderSystem();
 
+    void reload();
+
     void preSimulation();
 
     void render(Scene& scene);
@@ -95,8 +97,6 @@ class RenderSystem {
     VulkanContext& vc;
 
     std::unique_ptr<Fade> m_currentFade;
-
-    void resize();
 
     void updateUniformBuffer(const Camera& camera);
     void updateVertexAndIndexBuffer(std::set<Mesh*>& meshes);

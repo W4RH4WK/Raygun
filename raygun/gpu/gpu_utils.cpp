@@ -56,4 +56,14 @@ vk::ImageSubresourceRange defaultImageSubresourceRange()
     return mipImageSubresourceRange(0);
 }
 
+vk::ImageSubresourceLayers defaultImageSubresourceLayers()
+{
+    vk::ImageSubresourceLayers subresourceLayers;
+    subresourceLayers.setMipLevel(0);
+    subresourceLayers.setLayerCount(1);
+    subresourceLayers.setAspectMask(vk::ImageAspectFlagBits::eColor);
+
+    return subresourceLayers;
+}
+
 } // namespace raygun::gpu

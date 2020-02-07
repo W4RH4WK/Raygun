@@ -32,4 +32,6 @@ struct Shader {
     vk::UniqueShaderModule shaderModule;
 };
 
+void recompileAllShaders();
+
 } // namespace raygun::gpu

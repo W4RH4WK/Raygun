@@ -22,6 +22,7 @@
 
 #include "raygun/input/input_system.hpp"
 
+#include "raygun/gpu/shader.hpp"
 #include "raygun/logging.hpp"
 #include "raygun/raygun.hpp"
 
@@ -50,7 +51,9 @@ Input InputSystem::handleEvents()
         }
 
         if(pressed(GLFW_KEY_F6)) {
-            RG().renderSystem().raytracer().reload();
+            RG().resourceManager().clearShaderCache();
+            gpu::recompileAllShaders();
+            RG().renderSystem().reload();
         }
 
         if(pressed(GLFW_KEY_F10)) {

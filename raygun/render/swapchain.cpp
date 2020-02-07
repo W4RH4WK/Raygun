@@ -31,11 +31,6 @@ Swapchain::Swapchain(RenderSystem& renderSystem) : vc(RG().vc()), renderSystem(r
 {
     m_format = vc.surfaceFormat;
 
-    resize();
-}
-
-void Swapchain::resize()
-{
     setupSwapchain();
 
     m_images = vc.device->getSwapchainImagesKHR(*m_swapchain);

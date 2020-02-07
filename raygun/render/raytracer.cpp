@@ -43,56 +43,13 @@ Raytracer::Raytracer() : vc(RG().vc())
 
     setupPostprocessing();
 
-    resize();
-
-    RAYGUN_INFO("Raytracer initialized");
-}
-
-Raytracer::~Raytracer()
-{
-    vc.device->waitIdle();
-}
-
-void Raytracer::resize()
-{
     setupRaytracingImages();
 
     setupRaytracingPipeline();
 
     setupShaderBindingTable();
-}
 
-void Raytracer::reload()
-{
-    RAYGUN_INFO("Raytracer reload");
-
-    RG().resourceManager().clearShaderCache();
-
-    vc.waitIdle();
-
-    // recompile shaders
-    {
-        const auto shaderDir = fs::path{"resources/shaders"};
-        const std::set<fs::path> extensions = {".rgen", ".rint", ".rahit", ".rchit", ".rmiss", ".rcall"};
-
-        for(const auto& entry: fs::directory_iterator(shaderDir)) {
-            if(extensions.find(entry.path().extension()) == extensions.end()) continue;
-
-            const auto cmd = fmt::format("glslc.exe -o {0}.spv {0}", entry.path());
-            if(system(cmd.c_str()) != 0) {
-                RAYGUN_WARN("Compiling {} failed", entry.path());
-            }
-            else {
-                RAYGUN_INFO("Compiled {}", entry.path());
-            }
-        }
-    }
-
-    setupRaytracingPipeline();
-
-    setupShaderBindingTable();
-
-    setupPostprocessing();
+    RAYGUN_INFO("Raytracer initialized");
 }
 
 void Raytracer::setupBottomLevelAS()
