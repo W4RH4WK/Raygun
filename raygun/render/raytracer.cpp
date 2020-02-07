@@ -34,123 +34,6 @@
 
 namespace raygun::render {
 
-void Raytracer::setupBottomLevelAS()
-{
-    auto cmd = vc.computeQueue->createCommandBuffer();
-    auto fence = vc.device->createFenceUnique({});
-
-    cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-
-    auto& models = RG().resourceManager().models();
-    for(auto& model: models) {
-        if(!model->bottomLevelAS) {
-            model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
-        }
-    }
-
-    cmd->end();
-    vc.computeQueue->submit(*cmd, *fence);
-    vc.waitForFence(*fence);
-}
-
-void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
-{
-    RG().profiler().resetQueries(cmd);
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildStart);
-
-    topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
-
-    accelerationStructureBarrier(cmd);
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildEnd);
-}
-
-const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
-{
-    cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, *rtPipeline);
-
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, *rtPipelineLayout, 0, descriptorSet.set(), {});
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalStart);
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyStart);
-
-    const auto stride = raytracingProperties.shaderGroupHandleSize;
-
-    cmd.traceRaysNV(*sbtBuffer, raygenGroupIndex * stride,       //
-                    *sbtBuffer, missGroupIndex * stride, stride, //
-                    *sbtBuffer, hitGroupIndex * stride, stride,  //
-                    *sbtBuffer, 0, 0,                            //
-                    vc.windowSize.width, vc.windowSize.height, 1);
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyEnd);
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocStart);
-
-    int dispatchWidth = vc.windowSize.width / COMPUTE_WG_X_SIZE + ((vc.windowSize.width % COMPUTE_WG_X_SIZE) > 0 ? 1 : 0);
-    int dispatchHeight = vc.windowSize.height / COMPUTE_WG_Y_SIZE + ((vc.windowSize.height % COMPUTE_WG_Y_SIZE) > 0 ? 1 : 0);
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughStart);
-    m_roughPrepare->dispatch(cmd, dispatchWidth, dispatchHeight);
-    for(int i = 0; i < 10; ++i) {
-        m_roughBlurH->dispatch(cmd, dispatchWidth, dispatchHeight);
-        m_roughBlurV->dispatch(cmd, dispatchWidth, dispatchHeight);
-    }
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughEnd);
-
-    m_postprocess->dispatch(cmd, dispatchWidth, dispatchHeight);
-
-    ImGui::Checkbox("Use FXAA", &m_useFXAA);
-    if(m_useFXAA) {
-        m_fxaa->dispatch(cmd, dispatchWidth, dispatchHeight);
-        std::swap(m_baseImage, m_finalImage);
-    }
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocEnd);
-
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalEnd);
-
-    return selectResultImage();
-}
-
-void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
-                                   const gpu::Buffer& materialBuffer)
-{
-    // Bind acceleration structure
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, *topLevelAS);
-
-    // Bind images
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_OUTPUT_IMAGE, *m_baseImage);
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_ROUGH_IMAGE, *m_roughImage);
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_NORMAL_IMAGE, *m_normalImage);
-
-    // Bind buffers
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_UNIFORM_BUFFER, uniformBuffer);
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_VERTEX_BUFFER, vertexBuffer);
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_INDEX_BUFFER, indexBuffer);
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_MATERIAL_BUFFER, materialBuffer);
-    descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, topLevelAS->instanceOffsetTable());
-
-    descriptorSet.update();
-
-    RG().computeSystem().updateDescriptors(
-        uniformBuffer, {&*m_finalImage, &*m_baseImage, &*m_normalImage, &*m_roughImage, &*m_roughTransitions, &*m_roughColorsA, &*m_roughColorsB});
-}
-
-void Raytracer::imageShaderWriteBarrier(vk::CommandBuffer& cmd, vk::Image& image)
-{
-    vk::ImageMemoryBarrier barrier = {};
-    barrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
-    barrier.setDstAccessMask(vk::AccessFlagBits::eShaderWrite);
-    barrier.setOldLayout(vk::ImageLayout::eUndefined);
-    barrier.setNewLayout(vk::ImageLayout::eGeneral);
-    barrier.setImage(image);
-    barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
-
-    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, {barrier});
-}
-
 Raytracer::Raytracer() : vc(RG().vc())
 {
     auto properties = vc.physicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPropertiesNV>();
@@ -212,6 +95,123 @@ void Raytracer::reload()
     setupPostprocessing();
 }
 
+void Raytracer::setupBottomLevelAS()
+{
+    auto cmd = vc.computeQueue->createCommandBuffer();
+    auto fence = vc.device->createFenceUnique({});
+
+    cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+
+    auto& models = RG().resourceManager().models();
+    for(auto& model: models) {
+        if(!model->bottomLevelAS) {
+            model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
+        }
+    }
+
+    cmd->end();
+    vc.computeQueue->submit(*cmd, *fence);
+    vc.waitForFence(*fence);
+}
+
+void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
+{
+    RG().profiler().resetQueries(cmd);
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildStart);
+
+    m_topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
+
+    accelerationStructureBarrier(cmd);
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildEnd);
+}
+
+const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
+{
+    cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, *m_pipeline);
+
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, *m_pipelineLayout, 0, m_descriptorSet.set(), {});
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalStart);
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyStart);
+
+    const auto stride = raytracingProperties.shaderGroupHandleSize;
+
+    cmd.traceRaysNV(*m_sbtBuffer, m_raygenGroupIndex * stride,       //
+                    *m_sbtBuffer, m_missGroupIndex * stride, stride, //
+                    *m_sbtBuffer, m_hitGroupIndex * stride, stride,  //
+                    *m_sbtBuffer, 0, 0,                              //
+                    vc.windowSize.width, vc.windowSize.height, 1);
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyEnd);
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocStart);
+
+    int dispatchWidth = vc.windowSize.width / COMPUTE_WG_X_SIZE + ((vc.windowSize.width % COMPUTE_WG_X_SIZE) > 0 ? 1 : 0);
+    int dispatchHeight = vc.windowSize.height / COMPUTE_WG_Y_SIZE + ((vc.windowSize.height % COMPUTE_WG_Y_SIZE) > 0 ? 1 : 0);
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughStart);
+    m_roughPrepare->dispatch(cmd, dispatchWidth, dispatchHeight);
+    for(int i = 0; i < 10; ++i) {
+        m_roughBlurH->dispatch(cmd, dispatchWidth, dispatchHeight);
+        m_roughBlurV->dispatch(cmd, dispatchWidth, dispatchHeight);
+    }
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughEnd);
+
+    m_postprocess->dispatch(cmd, dispatchWidth, dispatchHeight);
+
+    ImGui::Checkbox("Use FXAA", &m_useFXAA);
+    if(m_useFXAA) {
+        m_fxaa->dispatch(cmd, dispatchWidth, dispatchHeight);
+        std::swap(m_baseImage, m_finalImage);
+    }
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocEnd);
+
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalEnd);
+
+    return selectResultImage();
+}
+
+void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
+                                   const gpu::Buffer& materialBuffer)
+{
+    // Bind acceleration structure
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, *m_topLevelAS);
+
+    // Bind images
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_OUTPUT_IMAGE, *m_baseImage);
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_ROUGH_IMAGE, *m_roughImage);
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_NORMAL_IMAGE, *m_normalImage);
+
+    // Bind buffers
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_UNIFORM_BUFFER, uniformBuffer);
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_VERTEX_BUFFER, vertexBuffer);
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_INDEX_BUFFER, indexBuffer);
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_MATERIAL_BUFFER, materialBuffer);
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, m_topLevelAS->instanceOffsetTable());
+
+    m_descriptorSet.update();
+
+    RG().computeSystem().updateDescriptors(
+        uniformBuffer, {&*m_finalImage, &*m_baseImage, &*m_normalImage, &*m_roughImage, &*m_roughTransitions, &*m_roughColorsA, &*m_roughColorsB});
+}
+
+void Raytracer::imageShaderWriteBarrier(vk::CommandBuffer& cmd, vk::Image& image)
+{
+    vk::ImageMemoryBarrier barrier = {};
+    barrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
+    barrier.setDstAccessMask(vk::AccessFlagBits::eShaderWrite);
+    barrier.setOldLayout(vk::ImageLayout::eUndefined);
+    barrier.setNewLayout(vk::ImageLayout::eGeneral);
+    barrier.setImage(image);
+    barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
+
+    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, {barrier});
+}
+
 void Raytracer::setupRaytracingImages()
 {
     m_baseImage = std::make_unique<gpu::Image>(vc.windowSize);
@@ -226,22 +226,22 @@ void Raytracer::setupRaytracingImages()
 
 void Raytracer::setupRaytracingDescriptorSet()
 {
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, 1, vk::DescriptorType::eAccelerationStructureNV,
-                             vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, 1, vk::DescriptorType::eAccelerationStructureNV,
+                               vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV);
 
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_OUTPUT_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ROUGH_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_NORMAL_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_OUTPUT_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ROUGH_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_NORMAL_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
 
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_UNIFORM_BUFFER, 1, vk::DescriptorType::eUniformBuffer,
-                             vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV | vk::ShaderStageFlagBits::eMissNV);
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_VERTEX_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INDEX_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_MATERIAL_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_UNIFORM_BUFFER, 1, vk::DescriptorType::eUniformBuffer,
+                               vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV | vk::ShaderStageFlagBits::eMissNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_VERTEX_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INDEX_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_MATERIAL_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
 
-    descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
 
-    descriptorSet.generate();
+    m_descriptorSet.generate();
 }
 
 namespace {
@@ -272,67 +272,67 @@ namespace {
 
 void Raytracer::setupRaytracingPipeline()
 {
-    m_rtShaderGroups.clear();
+    m_shaderGroups.clear();
 
     std::vector<vk::PipelineShaderStageCreateInfo> stages;
 
-    raygenGroupIndex = (uint32_t)m_rtShaderGroups.size();
+    m_raygenGroupIndex = (uint32_t)m_shaderGroups.size();
     const auto raygenShader = RG().resourceManager().loadShader("raygen.rgen");
     {
-        m_rtShaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
+        m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
         stages.push_back(raygenShader->shaderStageInfo(vk::ShaderStageFlagBits::eRaygenNV));
     }
 
-    missGroupIndex = (uint32_t)m_rtShaderGroups.size();
+    m_missGroupIndex = (uint32_t)m_shaderGroups.size();
     const auto missShader = RG().resourceManager().loadShader("miss.rmiss");
     {
-        m_rtShaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
+        m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
         stages.push_back(missShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissNV));
     }
 
     const auto shadowMissShader = RG().resourceManager().loadShader("shadowMiss.rmiss");
     {
-        m_rtShaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
+        m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
         stages.push_back(shadowMissShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissNV));
     }
 
-    hitGroupIndex = (uint32_t)m_rtShaderGroups.size();
+    m_hitGroupIndex = (uint32_t)m_shaderGroups.size();
     const auto closestHitShader = RG().resourceManager().loadShader("closesthit.rchit");
     {
-        m_rtShaderGroups.push_back(HitShaderGroup((uint32_t)stages.size()));
+        m_shaderGroups.push_back(HitShaderGroup((uint32_t)stages.size()));
         stages.push_back(closestHitShader->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitNV));
     }
 
     {
         vk::PipelineLayoutCreateInfo info = {};
         info.setSetLayoutCount(1);
-        info.setPSetLayouts(&descriptorSet.layout());
+        info.setPSetLayouts(&m_descriptorSet.layout());
 
-        rtPipelineLayout = vc.device->createPipelineLayoutUnique(info);
+        m_pipelineLayout = vc.device->createPipelineLayoutUnique(info);
     }
 
     {
         vk::RayTracingPipelineCreateInfoNV info = {};
         info.setStageCount((uint32_t)stages.size());
         info.setPStages(stages.data());
-        info.setGroupCount((uint32_t)m_rtShaderGroups.size());
-        info.setPGroups(m_rtShaderGroups.data());
+        info.setGroupCount((uint32_t)m_shaderGroups.size());
+        info.setPGroups(m_shaderGroups.data());
         info.setMaxRecursionDepth(7);
-        info.setLayout(*rtPipelineLayout);
+        info.setLayout(*m_pipelineLayout);
 
-        rtPipeline = vc.device->createRayTracingPipelineNVUnique(nullptr, info);
+        m_pipeline = vc.device->createRayTracingPipelineNVUnique(nullptr, info);
     }
 }
 
 void Raytracer::setupShaderBindingTable()
 {
-    const auto sbtSize = m_rtShaderGroups.size() * raytracingProperties.shaderGroupHandleSize;
+    const auto sbtSize = m_shaderGroups.size() * raytracingProperties.shaderGroupHandleSize;
 
-    sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eHostVisible);
+    m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eHostVisible);
 
-    vc.device->getRayTracingShaderGroupHandlesNV(*rtPipeline, 0, (uint32_t)m_rtShaderGroups.size(), sbtSize, sbtBuffer->map());
+    vc.device->getRayTracingShaderGroupHandlesNV(*m_pipeline, 0, (uint32_t)m_shaderGroups.size(), sbtSize, m_sbtBuffer->map());
 
-    sbtBuffer->unmap();
+    m_sbtBuffer->unmap();
 }
 
 void Raytracer::setupPostprocessing()

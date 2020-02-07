@@ -34,22 +34,12 @@ namespace raygun::render {
 
 /// Renderer which is responsible for ray tracing.
 struct Raytracer {
-    vk::PhysicalDeviceRayTracingPropertiesNV raytracingProperties = {};
+    Raytracer();
+    ~Raytracer();
 
-    UniqueTopLevelAS topLevelAS;
+    void resize();
 
-    gpu::DescriptorSet descriptorSet;
-
-    vk::UniquePipeline rtPipeline;
-    vk::UniquePipelineLayout rtPipelineLayout;
-
-    uint32_t raygenGroupIndex = 0;
-    uint32_t missGroupIndex = 0;
-    uint32_t hitGroupIndex = 0;
-
-    gpu::UniqueBuffer sbtBuffer;
-
-    //////////////////////////////////////////////////////////////////////////
+    void reload();
 
     void setupBottomLevelAS();
 
@@ -61,15 +51,6 @@ struct Raytracer {
                             const gpu::Buffer& materialBuffer);
 
     void imageShaderWriteBarrier(vk::CommandBuffer& cmd, vk::Image& image);
-
-    //////////////////////////////////////////////////////////////////////////
-
-    Raytracer();
-    ~Raytracer();
-
-    void resize();
-
-    void reload();
 
   private:
     void setupRaytracingImages();
@@ -84,10 +65,24 @@ struct Raytracer {
 
     const gpu::Image& selectResultImage();
 
-    //////////////////////////////////////////////////////////////////////////
+    vk::PhysicalDeviceRayTracingPropertiesNV raytracingProperties = {};
 
-    VulkanContext& vc;
+    std::vector<vk::RayTracingShaderGroupCreateInfoNV> m_shaderGroups;
 
+    UniqueTopLevelAS m_topLevelAS;
+
+    gpu::DescriptorSet m_descriptorSet;
+
+    vk::UniquePipeline m_pipeline;
+    vk::UniquePipelineLayout m_pipelineLayout;
+
+    uint32_t m_raygenGroupIndex = 0;
+    uint32_t m_missGroupIndex = 0;
+    uint32_t m_hitGroupIndex = 0;
+
+    gpu::UniqueBuffer m_sbtBuffer;
+
+    bool m_useFXAA = true;
     compute::UniqueComputePass m_postprocess;
     compute::UniqueComputePass m_fxaa;
 
@@ -107,9 +102,7 @@ struct Raytracer {
     gpu::UniqueImage m_roughTransitions;
     gpu::UniqueImage m_roughColorsA, m_roughColorsB;
 
-    bool m_useFXAA = true;
-
-    std::vector<vk::RayTracingShaderGroupCreateInfoNV> m_rtShaderGroups;
+    VulkanContext& vc;
 };
 
 using UniqueRaytracer = std::unique_ptr<Raytracer>;
