@@ -88,10 +88,10 @@ void RenderSystem::render(Scene& scene)
 
         m_raytracer->updateRenderTarget(*m_uniformBuffer, *m_vertexBuffer, *m_indexBuffer, *m_materialBuffer);
 
-        m_raytracer->doRaytracing(*m_commandBuffer);
+        const auto& raytracerResultImage = m_raytracer->doRaytracing(*m_commandBuffer);
 
         vk::ImageMemoryBarrier barr;
-        barr.setImage(m_raytracer->getOutputImage().image());
+        barr.setImage(raytracerResultImage.image());
         barr.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
         barr.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
         barr.setOldLayout(vk::ImageLayout::eGeneral);
@@ -114,7 +114,7 @@ void RenderSystem::render(Scene& scene)
         blit.setSrcOffsets({offset, bound});
         blit.setSrcSubresource(subresourceLayers);
 
-        m_commandBuffer->blitImage(m_raytracer->getOutputImage().image(), m_raytracer->getOutputImage().initialLayout(), image, vk::ImageLayout::eGeneral, blit,
+        m_commandBuffer->blitImage(raytracerResultImage.image(), raytracerResultImage.initialLayout(), image, vk::ImageLayout::eGeneral, blit,
                                    vk::Filter::eNearest);
 
         beginRenderPass();

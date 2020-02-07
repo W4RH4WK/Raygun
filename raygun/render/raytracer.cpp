@@ -66,18 +66,8 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildEnd);
 }
 
-void Raytracer::doRaytracing(vk::CommandBuffer& cmd)
+const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 {
-    static int currentOutput = m_useFXAA ? 1 : 0;
-    const char* names[] = {"Final", "Base/FXAA", "Normal", "Rough", "RTransition", "RCA", "RCB"};
-    if(ImGui::Checkbox("Use FXAA", &m_useFXAA)) {
-        currentOutput = m_useFXAA ? 1 : 0;
-    }
-    ImGui::Combo("Output Image", &currentOutput, names, RAYGUN_ARRAY_COUNT(names));
-    gpu::Image* images[] = {&*m_finalImage, &*m_baseImage, &*m_normalImage, &*m_roughImage, &*m_roughTransitions, &*m_roughColorsA, &*m_roughColorsB};
-    static_assert(RAYGUN_ARRAY_COUNT(names) == RAYGUN_ARRAY_COUNT(images));
-    m_shownImage = images[currentOutput];
-
     cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, *rtPipeline);
 
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, *rtPipelineLayout, 0, descriptorSet.set(), {});
@@ -111,12 +101,17 @@ void Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 
     m_postprocess->dispatch(cmd, dispatchWidth, dispatchHeight);
 
+    ImGui::Checkbox("Use FXAA", &m_useFXAA);
     if(m_useFXAA) {
         m_fxaa->dispatch(cmd, dispatchWidth, dispatchHeight);
+        std::swap(m_baseImage, m_finalImage);
     }
+
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocEnd);
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalEnd);
+
+    return selectResultImage();
 }
 
 void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
@@ -350,6 +345,21 @@ void Raytracer::setupPostprocessing()
 
     m_postprocess = cs.createComputePass("postprocess.comp");
     m_fxaa = cs.createComputePass("fxaa.comp");
+}
+
+const gpu::Image& Raytracer::selectResultImage()
+{
+    // For debugging purposes the result image can be selected via ImGui.
+
+    const char* imageNames[] = {"Final", "Base/Temp", "Normal", "Rough", "RTransition", "RCA", "RCB"};
+    gpu::Image* images[] = {m_finalImage.get(),       m_baseImage.get(),    m_normalImage.get(), m_roughImage.get(),
+                            m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()};
+    static_assert(RAYGUN_ARRAY_COUNT(imageNames) == RAYGUN_ARRAY_COUNT(images));
+
+    static int selectedResult = 0;
+    ImGui::Combo("Image", &selectedResult, imageNames, RAYGUN_ARRAY_COUNT(imageNames));
+
+    return *images[selectedResult];
 }
 
 } // namespace raygun::render

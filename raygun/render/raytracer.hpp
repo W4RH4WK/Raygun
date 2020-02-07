@@ -55,7 +55,7 @@ struct Raytracer {
 
     void setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene);
 
-    void doRaytracing(vk::CommandBuffer& cmd);
+    const gpu::Image& doRaytracing(vk::CommandBuffer& cmd);
 
     void updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
                             const gpu::Buffer& materialBuffer);
@@ -71,8 +71,6 @@ struct Raytracer {
 
     void reload();
 
-    gpu::Image& getOutputImage() { return *m_shownImage; }
-
   private:
     void setupRaytracingImages();
 
@@ -83,6 +81,8 @@ struct Raytracer {
     void setupShaderBindingTable();
 
     void setupPostprocessing();
+
+    const gpu::Image& selectResultImage();
 
     //////////////////////////////////////////////////////////////////////////
 
@@ -107,7 +107,6 @@ struct Raytracer {
     gpu::UniqueImage m_roughTransitions;
     gpu::UniqueImage m_roughColorsA, m_roughColorsB;
 
-    gpu::Image* m_shownImage = &*m_finalImage;
     bool m_useFXAA = true;
 
     std::vector<vk::RayTracingShaderGroupCreateInfoNV> m_rtShaderGroups;
