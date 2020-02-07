@@ -34,8 +34,6 @@ class Buffer {
 
     operator vk::Buffer() { return *m_buffer; }
 
-    explicit operator VkBuffer() { return *m_buffer; }
-
     vk::DeviceSize size() const { return m_info.range; }
 
     const vk::DeviceMemory& memory() const { return *m_memory; }
