@@ -52,32 +52,11 @@ class RenderSystem {
     void setupModelBuffers();
     void updateModelBuffers();
 
-    vk::RenderPass& renderPass()
-    {
-        if(!m_renderPass) {
-            RAYGUN_FATAL("RenderPass not set");
-        }
+    vk::RenderPass& renderPass() { return *m_renderPass; }
 
-        return *m_renderPass;
-    }
+    Swapchain& swapchain() { return *m_swapchain; }
 
-    Swapchain& swapchain()
-    {
-        if(!m_swapchain) {
-            RAYGUN_FATAL("Swapchain not set");
-        }
-
-        return *m_swapchain;
-    }
-
-    Raytracer& raytracer()
-    {
-        if(!m_raytracer) {
-            RAYGUN_FATAL("Raytracer not set");
-        }
-
-        return *m_raytracer;
-    }
+    Raytracer& raytracer() { return *m_raytracer; }
 
     void resetUniformBuffer();
 
@@ -117,6 +96,8 @@ class RenderSystem {
 
     std::unique_ptr<Fade> m_currentFade;
 
+    void resize();
+
     void updateUniformBuffer(const Camera& camera);
     void updateVertexAndIndexBuffer(std::set<Mesh*>& meshes);
     void updateMaterialBuffer(std::vector<Model*>& models);
@@ -128,8 +109,6 @@ class RenderSystem {
     void endRenderPass();
 
     void presentFrame();
-
-    void resize();
 
     void setupRenderPass();
 };

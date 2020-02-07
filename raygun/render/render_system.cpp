@@ -57,18 +57,6 @@ RenderSystem::~RenderSystem()
     vc.waitIdle();
 }
 
-void RenderSystem::resize()
-{
-    vc.waitIdle();
-
-    vc.windowSize = RG().window().size();
-
-    RG().scene().camera->updateProjection();
-
-    m_swapchain->resize();
-    m_raytracer->resize();
-}
-
 void RenderSystem::preSimulation()
 {
     m_imGuiRenderer->newFrame();
@@ -207,6 +195,18 @@ void RenderSystem::resetUniformBuffer()
     ubo.lightDir = glm::normalize(vec3(.4f, -.6f, -.8f));
     ubo.numSamples = 1;
     ubo.maxRecursions = 5;
+}
+
+void RenderSystem::resize()
+{
+    vc.waitIdle();
+
+    vc.windowSize = RG().window().size();
+
+    RG().scene().camera->updateProjection();
+
+    m_swapchain->resize();
+    m_raytracer->resize();
 }
 
 void RenderSystem::updateUniformBuffer(const Camera& camera)
