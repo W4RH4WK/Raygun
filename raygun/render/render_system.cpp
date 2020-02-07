@@ -95,32 +95,32 @@ void RenderSystem::render(Scene& scene)
 
         const auto& raytracerResultImage = m_raytracer->doRaytracing(*m_commandBuffer);
 
-        vk::ImageMemoryBarrier barr;
-        barr.setImage(raytracerResultImage.image());
-        barr.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
-        barr.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
-        barr.setOldLayout(vk::ImageLayout::eGeneral);
-        barr.setNewLayout(vk::ImageLayout::eGeneral);
-        barr.setSubresourceRange(gpu::defaultImageSubresourceRange());
+        {
+            vk::ImageMemoryBarrier barr;
+            barr.setImage(raytracerResultImage.image());
+            barr.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
+            barr.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
+            barr.setOldLayout(vk::ImageLayout::eGeneral);
+            barr.setNewLayout(vk::ImageLayout::eGeneral);
+            barr.setSubresourceRange(gpu::defaultImageSubresourceRange());
 
-        m_commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eRayTracingShaderNV, vk::PipelineStageFlagBits::eTransfer,
-                                         vk::DependencyFlagBits::eByRegion, {}, {}, barr);
+            m_commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eRayTracingShaderNV, vk::PipelineStageFlagBits::eTransfer,
+                                             vk::DependencyFlagBits::eByRegion, {}, {}, barr);
+        }
 
-        vk::ImageSubresourceLayers subresourceLayers;
-        subresourceLayers.setMipLevel(0);
-        subresourceLayers.setLayerCount(1);
-        subresourceLayers.setAspectMask(vk::ImageAspectFlagBits::eColor);
+        {
+            vk::Offset3D offset = {0, 0, 0};
+            vk::Offset3D bound = {(int32_t)vc.windowSize.width, (int32_t)vc.windowSize.height, 1};
 
-        vk::ImageBlit blit;
-        vk::Offset3D offset = {0, 0, 0};
-        vk::Offset3D bound = {(int32_t)vc.windowSize.width, (int32_t)vc.windowSize.height, 1};
-        blit.setDstOffsets({offset, bound});
-        blit.setDstSubresource(subresourceLayers);
-        blit.setSrcOffsets({offset, bound});
-        blit.setSrcSubresource(subresourceLayers);
+            vk::ImageBlit blit;
+            blit.setDstOffsets({offset, bound});
+            blit.setDstSubresource(gpu::defaultImageSubresourceLayers());
+            blit.setSrcOffsets({offset, bound});
+            blit.setSrcSubresource(gpu::defaultImageSubresourceLayers());
 
-        m_commandBuffer->blitImage(raytracerResultImage.image(), raytracerResultImage.initialLayout(), image, vk::ImageLayout::eGeneral, blit,
-                                   vk::Filter::eNearest);
+            m_commandBuffer->blitImage(raytracerResultImage.image(), raytracerResultImage.initialLayout(), image, vk::ImageLayout::eGeneral, blit,
+                                       vk::Filter::eNearest);
+        }
 
         beginRenderPass();
         {
