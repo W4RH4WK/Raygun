@@ -9,6 +9,7 @@
 - CMake: Visual Studio solutions now feature debug symbols in release builds
 - CMake: Visual Studio solutions use warning level 3
 - Fix render pass attachment initial layout warning
+- Give most Vulkan objects are named for more meaningful validator messages
 
 ## 1.1.0 Linux Support
 
