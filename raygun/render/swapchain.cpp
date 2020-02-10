@@ -113,8 +113,7 @@ void Swapchain::setupSwapchain()
     info.setPresentMode(presentMode);
     info.setClipped(true);
     info.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear);
-    info.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eStorage
-                       | vk::ImageUsageFlagBits::eTransferDst); // TODO remove storage ?
+    info.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst);
     info.setPQueueFamilyIndices(queueFamilyIndices);
 
     // Graphics and presentation queue could be different, in which case we
