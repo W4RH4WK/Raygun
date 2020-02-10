@@ -58,7 +58,7 @@ void Profiler::writeTimestamp(vk::CommandBuffer& cmdBuffer, TimestampQueryID id,
     cmdBuffer.writeTimestamp(pipelineStage, *timestampQueryPool, (uint32_t)id + MAX_TIMESTAMP_QUERIES * curQueryFrame);
 }
 
-void Profiler::resetQueries(vk::CommandBuffer& cmdBuffer)
+void Profiler::resetVulkanQueries(vk::CommandBuffer& cmdBuffer)
 {
     cmdBuffer.resetQueryPool(*timestampQueryPool, curQueryFrame * MAX_TIMESTAMP_QUERIES, MAX_TIMESTAMP_QUERIES);
 }
@@ -71,8 +71,8 @@ void Profiler::startFrame()
     }
 
     // Get GPU times from device
-    vc.device->getQueryPoolResults(*timestampQueryPool, prevQueryFrame() * MAX_TIMESTAMP_QUERIES, MAX_TIMESTAMP_QUERIES, vk::ArrayProxy<size_t>(timestampQueryResults),
-                                   sizeof(uint64_t), vk::QueryResultFlagBits::e64);
+    vc.device->getQueryPoolResults(*timestampQueryPool, prevQueryFrame() * MAX_TIMESTAMP_QUERIES, MAX_TIMESTAMP_QUERIES,
+                                   vk::ArrayProxy<size_t>(timestampQueryResults), sizeof(uint64_t), vk::QueryResultFlagBits::e64);
 
     // Transform GPU times from from ticks (plus some potential invalid bits) to valid time units
     std::transform(timestampQueryResults.cbegin(), timestampQueryResults.cend(), timestampQueryResults.begin(), [&](uint64_t ts) {

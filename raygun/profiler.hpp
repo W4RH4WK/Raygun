@@ -40,8 +40,9 @@ class Profiler {
     void writeTimestamp(vk::CommandBuffer& cmdBuffer, TimestampQueryID id, vk::PipelineStageFlagBits pipelineStage = vk::PipelineStageFlagBits::eAllCommands);
     double getTimeRangeMS(TimestampQueryID begin, TimestampQueryID end) const;
 
-    // needs to be called before rendering a frame, with the cmd buffer containing the first executed commands
-    void resetQueries(vk::CommandBuffer& cmdBuffer);
+    // Needs to be called before rendering a frame, with the cmd buffer
+    // containing the first executed commands.
+    void resetVulkanQueries(vk::CommandBuffer& cmdBuffer);
 
     void startFrame();
     void endFrame();

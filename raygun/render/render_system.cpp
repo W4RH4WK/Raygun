@@ -89,7 +89,7 @@ void RenderSystem::render(Scene& scene)
 {
     beginFrame();
     {
-        RG().profiler().resetQueries(*m_commandBuffer);
+        RG().profiler().resetVulkanQueries(*m_commandBuffer);
 
         updateUniformBuffer(*scene.camera);
 
