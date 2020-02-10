@@ -83,6 +83,8 @@ void RenderSystem::render(Scene& scene)
 {
     beginFrame();
     {
+        RG().profiler().resetQueries(*m_commandBuffer);
+
         updateUniformBuffer(*scene.camera);
 
         auto& image = m_swapchain->image(m_framebufferIndex);

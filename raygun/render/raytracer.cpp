@@ -73,8 +73,6 @@ void Raytracer::setupBottomLevelAS()
 
 void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 {
-    RG().profiler().resetQueries(cmd);
-
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildStart);
 
     m_topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
