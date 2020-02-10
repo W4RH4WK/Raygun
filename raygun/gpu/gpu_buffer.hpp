@@ -43,6 +43,8 @@ class Buffer {
     void* map();
     void unmap();
 
+    void setName(string_view name);
+
   private:
     void alloc(const vk::MemoryPropertyFlags& memoryTypeFlags);
 

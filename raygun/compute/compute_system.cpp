@@ -48,12 +48,14 @@ ComputePass::ComputePass(string_view name) : cs(RG().computeSystem()), computeSh
     pipeInfo.setStage(shaderStageInfo);
 
     computePipeline = cs.vc.device->createComputePipelineUnique(nullptr, pipeInfo);
+    RG().vc().setObjectName(*computePipeline, name);
 
     RAYGUN_TRACE("Compute pass {} initialized", name);
 }
 
 ComputeSystem::ComputeSystem() : vc(RG().vc())
 {
+    descriptorSet.setName("Compute System");
     descriptorSet.addBinding(0, 1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eCompute);
 
     for(auto i = 1; i < PRE_IMG_ELEMENTS + NUM_IMAGES * 2; i += 2) {
@@ -69,6 +71,7 @@ ComputeSystem::ComputeSystem() : vc(RG().vc())
     layoutInfo.setPSetLayouts(&descriptorSet.layout());
 
     computePipelineLayout = vc.device->createPipelineLayoutUnique(layoutInfo);
+    vc.setObjectName(*computePipelineLayout, "Compute System");
 
     vk::SamplerCreateInfo samplerInfo;
     samplerInfo.setAddressModeU(vk::SamplerAddressMode::eClampToEdge);
@@ -79,6 +82,7 @@ ComputeSystem::ComputeSystem() : vc(RG().vc())
     samplerInfo.setMipmapMode(vk::SamplerMipmapMode::eLinear);
     samplerInfo.setMaxLod(100); // this is perfectly legal
     linearClampedSampler = vc.device->createSamplerUnique(samplerInfo);
+    vc.setObjectName(*linearClampedSampler, "Compute System Linear Clamped Sampler");
 
     RAYGUN_INFO("Compute system initialized");
 }

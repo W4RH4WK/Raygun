@@ -57,6 +57,7 @@ class Swapchain {
     RenderSystem& renderSystem;
 
     void setupSwapchain();
+    void setupImages();
     void setupImageViews();
     void setupFramebuffers();
 };

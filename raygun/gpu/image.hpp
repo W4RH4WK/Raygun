@@ -42,6 +42,8 @@ class Image {
 
     const std::vector<vk::DescriptorImageInfo>& descriptorInfo() const { return m_descriptorInfo; }
 
+    void setName(string_view name);
+
   private:
     vk::Extent2D m_extent;
     vk::Format m_format;

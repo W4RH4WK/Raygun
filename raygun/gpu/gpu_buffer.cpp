@@ -74,6 +74,12 @@ void Buffer::unmap()
     }
 }
 
+void Buffer::setName(string_view name)
+{
+    vc.setObjectName(*m_buffer, name);
+    vc.setObjectName(*m_memory, name);
+}
+
 void Buffer::alloc(const vk::MemoryPropertyFlags& memoryTypeFlags)
 {
     const auto requirements = vc.device->getBufferMemoryRequirements(*m_buffer);

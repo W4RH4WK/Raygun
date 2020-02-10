@@ -55,7 +55,10 @@ Raytracer::Raytracer() : vc(RG().vc())
 void Raytracer::setupBottomLevelAS()
 {
     auto cmd = vc.computeQueue->createCommandBuffer();
+    vc.setObjectName(*cmd, "BLAS");
+
     auto fence = vc.device->createFenceUnique({});
+    vc.setObjectName(*fence, "BLAS");
 
     cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
@@ -170,17 +173,31 @@ void Raytracer::imageShaderWriteBarrier(vk::CommandBuffer& cmd, vk::Image& image
 void Raytracer::setupRaytracingImages()
 {
     m_baseImage = std::make_unique<gpu::Image>(vc.windowSize);
+    m_baseImage->setName("RT Base Image");
+
     m_normalImage = std::make_unique<gpu::Image>(vc.windowSize);
+    m_normalImage->setName("RT Normal Image");
+
     m_roughImage = std::make_unique<gpu::Image>(vc.windowSize);
+    m_roughImage->setName("RT Rough Image");
+
     m_finalImage = std::make_unique<gpu::Image>(vc.windowSize);
+    m_finalImage->setName("RT Final Image");
 
     m_roughTransitions = std::make_unique<gpu::Image>(vc.windowSize, vk::Format::eR8Snorm);
+    m_roughTransitions->setName("RT Rough Transition");
+
     m_roughColorsA = std::make_unique<gpu::Image>(vc.windowSize);
+    m_roughColorsA->setName("RT Rough Color A");
+
     m_roughColorsB = std::make_unique<gpu::Image>(vc.windowSize);
+    m_roughColorsB->setName("RT Rough Color B");
 }
 
 void Raytracer::setupRaytracingDescriptorSet()
 {
+    m_descriptorSet.setName("Ray Tracer");
+
     m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, 1, vk::DescriptorType::eAccelerationStructureNV,
                                vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV);
 
@@ -264,6 +281,7 @@ void Raytracer::setupRaytracingPipeline()
         info.setPSetLayouts(&m_descriptorSet.layout());
 
         m_pipelineLayout = vc.device->createPipelineLayoutUnique(info);
+        vc.setObjectName(*m_pipelineLayout, "Ray Tracer");
     }
 
     {
@@ -276,6 +294,7 @@ void Raytracer::setupRaytracingPipeline()
         info.setLayout(*m_pipelineLayout);
 
         m_pipeline = vc.device->createRayTracingPipelineNVUnique(nullptr, info);
+        vc.setObjectName(*m_pipeline, "Ray Tracer");
     }
 }
 
@@ -284,6 +303,7 @@ void Raytracer::setupShaderBindingTable()
     const auto sbtSize = m_shaderGroups.size() * raytracingProperties.shaderGroupHandleSize;
 
     m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eHostVisible);
+    m_sbtBuffer->setName("Shader Binding Table");
 
     vc.device->getRayTracingShaderGroupHandlesNV(*m_pipeline, 0, (uint32_t)m_shaderGroups.size(), sbtSize, m_sbtBuffer->map());
 

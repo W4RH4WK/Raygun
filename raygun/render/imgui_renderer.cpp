@@ -105,6 +105,7 @@ void ImGuiRenderer::setupDescriptorPool()
     info.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
     descriptorPool = vc.device->createDescriptorPoolUnique(info);
+    vc.setObjectName(*descriptorPool, "ImGui");
 }
 
 void ImGuiRenderer::setupForVulkan()

@@ -253,10 +253,13 @@ void VulkanContext::setupDevice()
 void VulkanContext::setupQueues()
 {
     graphicsQueue = std::make_unique<gpu::Queue>(*device, graphicsQueueFamilyIndex);
+    setObjectName(graphicsQueue->queue(), "Graphics Queue");
 
     presentQueue = std::make_unique<gpu::Queue>(*device, presentQueueFamilyIndex);
+    setObjectName(presentQueue->queue(), "Present Queue");
 
     computeQueue = std::make_unique<gpu::Queue>(*device, computeQueueFamilyIndex);
+    setObjectName(computeQueue->queue(), "Compute Queue");
 }
 
 } // namespace raygun

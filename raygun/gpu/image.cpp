@@ -45,6 +45,7 @@ Image::Image(vk::Extent2D extent, vk::Format format, uint32_t numMipLayers, vk::
 
     // barrier
     {
+        // TODO
         auto cmd = vc.graphicsQueue->createCommandBuffer();
 
         vk::CommandBufferBeginInfo beginInfo;
@@ -71,6 +72,17 @@ Image::Image(vk::Extent2D extent, vk::Format format, uint32_t numMipLayers, vk::
             m_descriptorInfo[i].setImageLayout(m_initialLayout);
             m_descriptorInfo[i].setImageView(imageView(i));
         }
+    }
+}
+
+void Image::setName(string_view name)
+{
+    vc.setObjectName(*m_image, name);
+    vc.setObjectName(*m_fullImageView, name);
+    vc.setObjectName(*m_imageMemory, name);
+
+    for(const auto& view: m_imageViews) {
+        vc.setObjectName(*view, name);
     }
 }
 

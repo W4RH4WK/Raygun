@@ -155,9 +155,12 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
         createInfo.setInfo(m_info);
 
         std::tie(m_structure, m_memory) = createAccelerationStructure(m_info);
+        vc.setObjectName(*m_structure, "TLAS");
+        vc.setObjectName(*m_memory, "TLAS");
     }
 
     m_scratch = createScratchBuffer(*m_structure);
+    m_scratch->setName("TLAS");
 
     m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingNV);
     m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer);
@@ -201,8 +204,11 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
     createInfo.setInfo(info);
 
     std::tie(m_structure, m_memory) = createAccelerationStructure(info);
+    vc.setObjectName(*m_structure, "BLAS");
+    vc.setObjectName(*m_memory, "BLAS");
 
     m_scratch = createScratchBuffer(*m_structure);
+    m_scratch->setName("BLAS");
 
     cmd.buildAccelerationStructureNV(info, nullptr, 0, false, *m_structure, nullptr, *m_scratch, 0);
 }

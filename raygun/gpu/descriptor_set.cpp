@@ -151,4 +151,11 @@ vk::DescriptorSet DescriptorSet::generateSet() const
     return vc.device->allocateDescriptorSets(info).at(0);
 }
 
+void DescriptorSet::setName(string_view name)
+{
+    vc.setObjectName(*m_pool, name);
+    vc.setObjectName(*m_layout, name);
+    vc.setObjectName(m_set, name);
+}
+
 } // namespace raygun::gpu

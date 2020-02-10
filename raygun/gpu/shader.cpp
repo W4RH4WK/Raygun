@@ -29,13 +29,16 @@ namespace raygun::gpu {
 
 Shader::Shader(string_view, const fs::path& path)
 {
+    auto& vc = RG().vc();
+
     const auto code = io::readFile(path);
 
     vk::ShaderModuleCreateInfo info = {};
     info.setCodeSize(code.size());
     info.setPCode(reinterpret_cast<const uint32_t*>(code.data()));
 
-    shaderModule = RG().vc().device->createShaderModuleUnique(info);
+    shaderModule = vc.device->createShaderModuleUnique(info);
+    vc.setObjectName(*shaderModule, path.stem().string());
 }
 
 vk::PipelineShaderStageCreateInfo Shader::shaderStageInfo(vk::ShaderStageFlagBits shaderStages)

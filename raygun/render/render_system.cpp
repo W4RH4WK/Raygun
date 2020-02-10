@@ -40,14 +40,20 @@ RenderSystem::RenderSystem() : vc(RG().vc())
     m_swapchain = std::make_unique<Swapchain>(*this);
 
     m_commandBuffer = vc.graphicsQueue->createCommandBuffer();
+    vc.setObjectName(*m_commandBuffer, "Render System");
+
     m_commandBufferFence = vc.device->createFenceUnique({vk::FenceCreateFlagBits::eSignaled});
+    vc.setObjectName(*m_commandBufferFence, "Render System");
 
     m_raytracer = std::make_unique<Raytracer>();
 
     m_imGuiRenderer = std::make_unique<ImGuiRenderer>(*this);
 
     m_imageAcquiredSemaphore = vc.device->createSemaphoreUnique({});
+    vc.setObjectName(*m_imageAcquiredSemaphore, "Render System Image Acquired");
+
     m_renderCompleteSemaphore = vc.device->createSemaphoreUnique({});
+    vc.setObjectName(*m_renderCompleteSemaphore, "Render System Render Complete");
 
     RAYGUN_INFO("Render system initialized");
 }
@@ -182,13 +188,16 @@ void RenderSystem::setupModelBuffers()
     m_vertexBuffer =
         std::make_unique<gpu::Buffer>(vertexCount * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
                                       vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    m_vertexBuffer->setName("Vertex Buffer");
 
     m_indexBuffer =
         std::make_unique<gpu::Buffer>(indexCount * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
                                       vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    m_indexBuffer->setName("Index Buffer");
 
     m_materialBuffer = std::make_unique<gpu::Buffer>(materialCount * sizeof(gpu::Material), vk::BufferUsageFlagBits::eStorageBuffer,
                                                      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    m_materialBuffer->setName("Material Buffer");
 
     updateVertexAndIndexBuffer(meshes);
 
@@ -401,6 +410,7 @@ void RenderSystem::setupRenderPass()
     info.setPDependencies(dependencies.data());
 
     m_renderPass = vc.device->createRenderPassUnique(info);
+    vc.setObjectName(*m_renderPass, "Render System");
 }
 
 } // namespace raygun::render

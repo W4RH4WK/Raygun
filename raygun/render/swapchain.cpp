@@ -33,7 +33,7 @@ Swapchain::Swapchain(RenderSystem& renderSystem) : vc(RG().vc()), renderSystem(r
 
     setupSwapchain();
 
-    m_images = vc.device->getSwapchainImagesKHR(*m_swapchain);
+    setupImages();
 
     setupImageViews();
 
@@ -135,6 +135,14 @@ void Swapchain::setupSwapchain()
     m_swapchain = vc.device->createSwapchainKHRUnique(info);
 }
 
+void Swapchain::setupImages()
+{
+    m_images = vc.device->getSwapchainImagesKHR(*m_swapchain);
+    for(const auto& image: m_images) {
+        vc.setObjectName(image, "Swapchain");
+    }
+}
+
 void Swapchain::setupImageViews()
 {
     m_imageViews.clear();
@@ -159,7 +167,10 @@ void Swapchain::setupImageViews()
             vk::ComponentSwizzle::eA,
         });
 
-        m_imageViews.push_back(vc.device->createImageViewUnique(info));
+        auto imageView = vc.device->createImageViewUnique(info);
+        vc.setObjectName(*imageView, "Swapchain");
+
+        m_imageViews.push_back(std::move(imageView));
     }
 }
 
@@ -176,7 +187,10 @@ void Swapchain::setupFramebuffers()
         info.setHeight(vc.windowSize.height);
         info.setLayers(1);
 
-        m_framebuffers.push_back(vc.device->createFramebufferUnique(info));
+        auto frameBuffer = vc.device->createFramebufferUnique(info);
+        vc.setObjectName(*frameBuffer, "Swapchain");
+
+        m_framebuffers.push_back(std::move(frameBuffer));
     }
 }
 

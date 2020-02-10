@@ -26,8 +26,10 @@ namespace raygun::gpu {
 
 raygun::gpu::UniqueBuffer createUniformBuffer()
 {
-    return std::make_unique<gpu::Buffer>(sizeof(gpu::UniformBufferObject), vk::BufferUsageFlagBits::eUniformBuffer,
-                                         vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    auto ubo = std::make_unique<gpu::Buffer>(sizeof(gpu::UniformBufferObject), vk::BufferUsageFlagBits::eUniformBuffer,
+                                             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    ubo->setName("UBO");
+    return ubo;
 }
 
 } // namespace raygun::gpu

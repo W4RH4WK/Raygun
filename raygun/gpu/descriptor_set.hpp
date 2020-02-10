@@ -61,6 +61,8 @@ class DescriptorSet {
 
     const vk::DescriptorSet& set() const { return m_set; }
 
+    void setName(string_view name);
+
   private:
     VulkanContext& vc;
 
