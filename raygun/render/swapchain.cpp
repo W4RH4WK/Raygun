@@ -158,7 +158,6 @@ void Swapchain::setupImageViews()
         info.setFormat(m_format);
         info.setSubresourceRange(subresourceRange);
 
-        // TODO check if default construction suffices.
         info.setComponents({
             vk::ComponentSwizzle::eR,
             vk::ComponentSwizzle::eG,
