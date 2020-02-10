@@ -45,8 +45,11 @@ Image::Image(vk::Extent2D extent, vk::Format format, uint32_t numMipLayers, vk::
 
     // barrier
     {
-        // TODO
         auto cmd = vc.graphicsQueue->createCommandBuffer();
+        vc.setObjectName(*cmd, "Image Constructor");
+
+        auto fence = vc.device->createFenceUnique({});
+        vc.setObjectName(*fence, "Image Constructor");
 
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -61,9 +64,8 @@ Image::Image(vk::Extent2D extent, vk::Format format, uint32_t numMipLayers, vk::
         cmd->pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion, {}, {}, barr);
 
         cmd->end();
-
-        vc.graphicsQueue->submit(*cmd);
-        vc.graphicsQueue->waitIdle();
+        vc.graphicsQueue->submit(*cmd, *fence);
+        vc.waitForFence(*fence);
     }
 
     {
