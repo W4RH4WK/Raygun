@@ -45,8 +45,6 @@ struct Raytracer {
     void updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
                             const gpu::Buffer& materialBuffer);
 
-    void imageShaderWriteBarrier(vk::CommandBuffer& cmd, vk::Image& image);
-
   private:
     void setupRaytracingImages();
 

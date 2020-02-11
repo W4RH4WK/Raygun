@@ -157,19 +157,6 @@ void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::
         uniformBuffer, {&*m_finalImage, &*m_baseImage, &*m_normalImage, &*m_roughImage, &*m_roughTransitions, &*m_roughColorsA, &*m_roughColorsB});
 }
 
-void Raytracer::imageShaderWriteBarrier(vk::CommandBuffer& cmd, vk::Image& image)
-{
-    vk::ImageMemoryBarrier barrier = {};
-    barrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
-    barrier.setDstAccessMask(vk::AccessFlagBits::eShaderWrite);
-    barrier.setOldLayout(vk::ImageLayout::eUndefined);
-    barrier.setNewLayout(vk::ImageLayout::eGeneral);
-    barrier.setImage(image);
-    barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
-
-    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, {barrier});
-}
-
 void Raytracer::setupRaytracingImages()
 {
     m_baseImage = std::make_unique<gpu::Image>(vc.windowSize);

@@ -93,23 +93,19 @@ void RenderSystem::render(Scene& scene)
 
         updateUniformBuffer(*scene.camera);
 
-        auto& image = m_swapchain->image(m_framebufferIndex);
-
         m_raytracer->setupTopLevelAS(*m_commandBuffer, scene);
-
-        m_raytracer->imageShaderWriteBarrier(*m_commandBuffer, image);
 
         m_raytracer->updateRenderTarget(*m_uniformBuffer, *m_vertexBuffer, *m_indexBuffer, *m_materialBuffer);
 
         const auto& raytracerResultImage = m_raytracer->doRaytracing(*m_commandBuffer);
 
+        auto& image = m_swapchain->image(m_framebufferIndex);
+
         {
             vk::ImageMemoryBarrier barr;
-            barr.setImage(raytracerResultImage.image());
-            barr.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
-            barr.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
-            barr.setOldLayout(vk::ImageLayout::eGeneral);
-            barr.setNewLayout(vk::ImageLayout::eGeneral);
+            barr.setImage(image);
+            barr.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
+            barr.setNewLayout(vk::ImageLayout::eTransferDstOptimal);
             barr.setSubresourceRange(gpu::defaultImageSubresourceRange());
 
             m_commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eRayTracingShaderNV, vk::PipelineStageFlagBits::eTransfer,
@@ -126,7 +122,7 @@ void RenderSystem::render(Scene& scene)
             blit.setSrcOffsets({offset, bound});
             blit.setSrcSubresource(gpu::defaultImageSubresourceLayers());
 
-            m_commandBuffer->blitImage(raytracerResultImage.image(), raytracerResultImage.initialLayout(), image, vk::ImageLayout::eGeneral, blit,
+            m_commandBuffer->blitImage(raytracerResultImage.image(), raytracerResultImage.initialLayout(), image, vk::ImageLayout::eTransferDstOptimal, blit,
                                        vk::Filter::eNearest);
         }
 
@@ -381,15 +377,11 @@ void RenderSystem::setupRenderPass()
     attachments[0].setFormat(vc.surfaceFormat);
     attachments[0].setSamples(SAMPLES);
     attachments[0].setLoadOp(vk::AttachmentLoadOp::eLoad);
-    attachments[0].setStoreOp(vk::AttachmentStoreOp::eStore);
-    attachments[0].setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
-    attachments[0].setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-    attachments[0].setInitialLayout(vk::ImageLayout::eGeneral);
     attachments[0].setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 
     vk::AttachmentReference colorRef = {};
     colorRef.setAttachment(0);
-    colorRef.setLayout(vk::ImageLayout::eGeneral);
+    colorRef.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
     std::array<vk::SubpassDescription, 1> subpasses;
     subpasses[0].setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
