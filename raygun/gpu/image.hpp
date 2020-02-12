@@ -31,6 +31,8 @@ class Image {
     Image(vk::Extent2D extent, vk::Format format = vk::Format::eR16G16B16A16Sfloat, uint32_t numMipLayers = 1,
           vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1, vk::ImageLayout initialLayout = vk::ImageLayout::eGeneral);
 
+    operator vk::Image() const { return *m_image; }
+
     const vk::Extent2D& extent() const { return m_extent; }
     const vk::Format& format() const { return m_format; }
     uint32_t numMips() const { return m_numMips; }

@@ -62,7 +62,7 @@ void Raytracer::setupBottomLevelAS()
 
     cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
-    auto& models = RG().resourceManager().models();
+    auto models = RG().resourceManager().models();
     for(auto& model: models) {
         if(!model->bottomLevelAS) {
             model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
@@ -95,6 +95,8 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyStart);
 
+    initialImageBarrier(cmd);
+
     const auto stride = raytracingProperties.shaderGroupHandleSize;
 
     cmd.traceRaysNV(*m_sbtBuffer, m_raygenGroupIndex * stride,       //
@@ -102,6 +104,8 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
                     *m_sbtBuffer, m_hitGroupIndex * stride, stride,  //
                     *m_sbtBuffer, 0, 0,                              //
                     vc.windowSize.width, vc.windowSize.height, 1);
+
+    computeShaderImageBarrier(cmd, {m_baseImage.get(), m_normalImage.get(), m_roughImage.get()}, vk::PipelineStageFlagBits::eRayTracingShaderNV);
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyEnd);
 
@@ -111,14 +115,29 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
     int dispatchHeight = vc.windowSize.height / COMPUTE_WG_Y_SIZE + ((vc.windowSize.height % COMPUTE_WG_Y_SIZE) > 0 ? 1 : 0);
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughStart);
+
     m_roughPrepare->dispatch(cmd, dispatchWidth, dispatchHeight);
+    computeShaderImageBarrier(cmd, {m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()});
+
     for(int i = 0; i < 10; ++i) {
         m_roughBlurH->dispatch(cmd, dispatchWidth, dispatchHeight);
+        computeShaderImageBarrier(cmd, {m_roughColorsA.get(), m_roughColorsB.get()});
         m_roughBlurV->dispatch(cmd, dispatchWidth, dispatchHeight);
+        computeShaderImageBarrier(cmd, {m_roughColorsA.get(), m_roughColorsB.get()});
     }
+
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughEnd);
 
     m_postprocess->dispatch(cmd, dispatchWidth, dispatchHeight);
+    computeShaderImageBarrier(cmd, {
+                                       m_baseImage.get(),
+                                       m_normalImage.get(),
+                                       m_roughImage.get(),
+                                       m_finalImage.get(),
+                                       m_roughTransitions.get(),
+                                       m_roughColorsA.get(),
+                                       m_roughColorsB.get(),
+                                   });
 
     ImGui::Checkbox("Use FXAA", &m_useFXAA);
     if(m_useFXAA) {
@@ -322,6 +341,43 @@ const gpu::Image& Raytracer::selectResultImage()
     ImGui::Combo("Image", &selectedResult, imageNames, RAYGUN_ARRAY_COUNT(imageNames));
 
     return *images[selectedResult];
+}
+
+void Raytracer::initialImageBarrier(vk::CommandBuffer& cmd)
+{
+    const auto images = {m_baseImage.get(),        m_normalImage.get(),  m_roughImage.get(),  m_finalImage.get(),
+                         m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()};
+
+    std::vector<vk::ImageMemoryBarrier> imageBarriers;
+    imageBarriers.reserve(images.size());
+    for(auto& image: images) {
+        auto& barrier = imageBarriers.emplace_back();
+        barrier.setImage(*image);
+        barrier.setOldLayout(vk::ImageLayout::eUndefined);
+        barrier.setNewLayout(vk::ImageLayout::eGeneral);
+        barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
+    }
+
+    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eRayTracingShaderNV, //
+                        vk::DependencyFlagBits::eByRegion, {}, {}, imageBarriers);
+}
+
+void Raytracer::computeShaderImageBarrier(vk::CommandBuffer& cmd, std::initializer_list<gpu::Image*> images, vk::PipelineStageFlags srcStageMask)
+{
+    std::vector<vk::ImageMemoryBarrier> imageBarriers;
+    imageBarriers.reserve(images.size());
+    for(auto& image: images) {
+        auto& barrier = imageBarriers.emplace_back();
+        barrier.setImage(*image);
+        barrier.setSrcAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite);
+        barrier.setDstAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite);
+        barrier.setOldLayout(vk::ImageLayout::eGeneral);
+        barrier.setNewLayout(vk::ImageLayout::eGeneral);
+        barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
+    }
+
+    cmd.pipelineBarrier(srcStageMask, vk::PipelineStageFlagBits::eComputeShader, //
+                        vk::DependencyFlagBits::eByRegion, {}, {}, imageBarriers);
 }
 
 } // namespace raygun::render

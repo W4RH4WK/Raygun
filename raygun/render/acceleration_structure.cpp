@@ -56,8 +56,8 @@ namespace {
         const auto transform = glm::transpose(entity.globalTransform().toMat4());
         memcpy(&instance.transform, &transform, sizeof(instance.transform));
 
-        const auto result = device.getAccelerationStructureHandleNV(*entity.model->bottomLevelAS, sizeof(instance.accelerationStructureHandle),
-                                                                    &instance.accelerationStructureHandle);
+        [[maybe_unused]] const auto result = device.getAccelerationStructureHandleNV(*entity.model->bottomLevelAS, sizeof(instance.accelerationStructureHandle),
+                                                                                     &instance.accelerationStructureHandle);
         RAYGUN_ASSERT(result == vk::Result::eSuccess);
 
         return instance;

@@ -99,19 +99,35 @@ void RenderSystem::render(Scene& scene)
 
         const auto& raytracerResultImage = m_raytracer->doRaytracing(*m_commandBuffer);
 
-        auto& image = m_swapchain->image(m_framebufferIndex);
+        // Ensure ray traced image is ready for transfer.
+        {
+            vk::ImageMemoryBarrier barrier;
+            barrier.setImage(raytracerResultImage);
+            barrier.setOldLayout(vk::ImageLayout::eGeneral);
+            barrier.setNewLayout(vk::ImageLayout::eTransferSrcOptimal);
+            barrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite);
+            barrier.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
+            barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
 
+            m_commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eRayTracingShaderNV | vk::PipelineStageFlagBits::eComputeShader,
+                                             vk::PipelineStageFlagBits::eTransfer, vk::DependencyFlagBits::eByRegion, {}, {}, barrier);
+        }
+
+        auto& resultImage = m_swapchain->image(m_framebufferIndex);
+
+        // Transition result image layout for blit.
         {
             vk::ImageMemoryBarrier barr;
-            barr.setImage(image);
+            barr.setImage(resultImage);
             barr.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
             barr.setNewLayout(vk::ImageLayout::eTransferDstOptimal);
             barr.setSubresourceRange(gpu::defaultImageSubresourceRange());
 
-            m_commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eRayTracingShaderNV, vk::PipelineStageFlagBits::eTransfer,
+            m_commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, //
                                              vk::DependencyFlagBits::eByRegion, {}, {}, barr);
         }
 
+        // Copy ray traced image -> result image.
         {
             vk::Offset3D offset = {0, 0, 0};
             vk::Offset3D bound = {(int32_t)vc.windowSize.width, (int32_t)vc.windowSize.height, 1};
@@ -122,8 +138,9 @@ void RenderSystem::render(Scene& scene)
             blit.setSrcOffsets({offset, bound});
             blit.setSrcSubresource(gpu::defaultImageSubresourceLayers());
 
-            m_commandBuffer->blitImage(raytracerResultImage.image(), raytracerResultImage.initialLayout(), image, vk::ImageLayout::eTransferDstOptimal, blit,
-                                       vk::Filter::eNearest);
+            m_commandBuffer->blitImage(raytracerResultImage, vk::ImageLayout::eTransferSrcOptimal, //
+                                       resultImage, vk::ImageLayout::eTransferDstOptimal,          //
+                                       blit, vk::Filter::eNearest);
         }
 
         beginRenderPass();
@@ -377,6 +394,7 @@ void RenderSystem::setupRenderPass()
     attachments[0].setFormat(vc.surfaceFormat);
     attachments[0].setSamples(SAMPLES);
     attachments[0].setLoadOp(vk::AttachmentLoadOp::eLoad);
+    attachments[0].setInitialLayout(vk::ImageLayout::eTransferDstOptimal);
     attachments[0].setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 
     vk::AttachmentReference colorRef = {};

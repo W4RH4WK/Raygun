@@ -39,7 +39,7 @@ void ComputePass::dispatch(vk::CommandBuffer& cmd, uint32_t width, uint32_t heig
     cmd.dispatch(width, height, depth);
 }
 
-ComputePass::ComputePass(string_view name) : cs(RG().computeSystem()), computeShader(RG().resourceManager().loadShader(name))
+ComputePass::ComputePass(string_view name) : computeShader(RG().resourceManager().loadShader(name)), cs(RG().computeSystem())
 {
     auto shaderStageInfo = computeShader->shaderStageInfo(vk::ShaderStageFlagBits::eCompute);
 
