@@ -9,7 +9,10 @@
 - CMake: Visual Studio solutions now feature debug symbols in release builds
 - CMake: Visual Studio solutions use warning level 3
 - Fix render pass attachment initial layout warning
-- Give most Vulkan objects are named for more meaningful validator messages
+- Attach names to commonly used Vulkan objects.
+  These names are used by the validation layer.
+- GPU should now be properly synced.
+  Lots of barriers have been added.
 
 ## 1.1.0 Linux Support
 
