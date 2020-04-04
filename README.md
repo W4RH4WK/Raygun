@@ -15,6 +15,8 @@ Debugging and profiling information is displayed via [ImGui].
 [GLFW]: https://www.glfw.org/
 [ImGui]: https://github.com/ocornut/imgui/
 
+🎥 [Video demo](https://www.youtube.com/watch?v=QZSoVidqV2Q)
+
 <p align="center">
     <img src="docs/screenshot.png" alt="Screenshot" />
 </p>
