@@ -43,10 +43,12 @@ class Buffer {
     void* map();
     void unmap();
 
+    vk::DeviceAddress address() const;
+
     void setName(string_view name);
 
   private:
-    void alloc(const vk::MemoryPropertyFlags& memoryTypeFlags);
+    void alloc(vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryTypeFlags);
 
     vk::UniqueBuffer m_buffer;
     vk::UniqueDeviceMemory m_memory;
@@ -63,12 +65,14 @@ using UniqueBuffer = std::unique_ptr<Buffer>;
 
 /// Reference into a buffer with offset and size.
 struct BufferRef {
-    vk::Buffer buffer = {};
-    vk::DeviceSize offset = 0;
-    vk::DeviceSize size = 0;
+    vk::DeviceAddress bufferAddress = 0;
+    vk::DeviceSize offsetInBytes = 0;
+    vk::DeviceSize sizeInBytes = 0;
     vk::DeviceSize elementSize = 1;
 
-    uint32_t elementCount() const { return (uint32_t)(size / elementSize); }
+    uint32_t offsetInElements() const { return (uint32_t)(offsetInBytes / elementSize); }
+
+    uint32_t sizeInElements() const { return (uint32_t)(sizeInBytes / elementSize); }
 };
 
 /// Copy the data from an std::vector to a dedicated GPU buffer.

@@ -31,84 +31,76 @@ namespace raygun::render {
 
 namespace {
 
-    // See https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/chap33.html#acceleration-structure
-    struct VkGeometryInstanceNV {
-        float transform[12];
-        uint32_t instanceCustomIndex : 24;
-        uint32_t mask : 8;
-        uint32_t instanceOffset : 24;
-        uint32_t flags : 8;
-        uint64_t accelerationStructureHandle;
-    };
-    static_assert(sizeof(VkGeometryInstanceNV) == 64);
-
-    VkGeometryInstanceNV instanceFromEntity(vk::Device device, const Entity& entity, uint32_t instanceId)
+    vk::AccelerationStructureInstanceKHR instanceFromEntity(vk::Device device, const Entity& entity, uint32_t instanceId)
     {
         RAYGUN_ASSERT(entity.model->bottomLevelAS);
 
-        VkGeometryInstanceNV instance = {};
-        instance.instanceCustomIndex = instanceId;
-        instance.instanceOffset = 0;
-        instance.mask = 0xff;
-        instance.flags = static_cast<uint32_t>(vk::GeometryInstanceFlagBitsNV::eTriangleCullDisable);
+        vk::AccelerationStructureInstanceKHR instance = {};
+        instance.setInstanceCustomIndex(instanceId);
+        instance.setMask(0xff);
+        instance.setFlags(vk::GeometryInstanceFlagBitsKHR::eTriangleCullDisable);
 
-        // The expected matrix is a row-major 4x3 matrix.
+        // 3x4 row-major affine transformation matrix.
         const auto transform = glm::transpose(entity.globalTransform().toMat4());
         memcpy(&instance.transform, &transform, sizeof(instance.transform));
 
-        [[maybe_unused]] const auto result = device.getAccelerationStructureHandleNV(*entity.model->bottomLevelAS, sizeof(instance.accelerationStructureHandle),
-                                                                                     &instance.accelerationStructureHandle);
-        RAYGUN_ASSERT(result == vk::Result::eSuccess);
+        const auto blasAddress = device.getAccelerationStructureAddressKHR({*entity.model->bottomLevelAS});
+        instance.setAccelerationStructureReference(blasAddress);
 
         return instance;
     }
 
-    std::pair<vk::UniqueAccelerationStructureNV, vk::UniqueDeviceMemory> createAccelerationStructure(const vk::AccelerationStructureInfoNV info)
+    std::tuple<vk::UniqueAccelerationStructureKHR, vk::UniqueDeviceMemory, gpu::UniqueBuffer>
+    createStructureMemoryScratch(const vk::AccelerationStructureCreateInfoKHR& createInfo)
     {
         VulkanContext& vc = RG().vc();
 
-        vk::AccelerationStructureCreateInfoNV createInfo = {};
-        createInfo.setInfo(info);
-
-        auto structure = vc.device->createAccelerationStructureNVUnique(createInfo);
+        auto structure = vc.device->createAccelerationStructureKHRUnique(createInfo);
 
         // allocate memory
         vk::UniqueDeviceMemory memory;
         {
-            vk::AccelerationStructureMemoryRequirementsInfoNV memInfo = {};
+            vk::AccelerationStructureMemoryRequirementsInfoKHR memInfo = {};
             memInfo.setAccelerationStructure(*structure);
+            memInfo.setType(vk::AccelerationStructureMemoryRequirementsTypeKHR::eObject);
 
-            const auto memoryRequirements = vc.device->getAccelerationStructureMemoryRequirementsNV(memInfo).memoryRequirements;
+            auto memoryRequirements = vc.device->getAccelerationStructureMemoryRequirementsKHR(memInfo).memoryRequirements;
+
+            vk::MemoryAllocateFlagsInfo allocInfoFlags = {};
+            allocInfoFlags.setFlags(vk::MemoryAllocateFlagBits::eDeviceAddress);
 
             vk::MemoryAllocateInfo allocInfo = {};
             allocInfo.setAllocationSize(memoryRequirements.size);
             allocInfo.setMemoryTypeIndex(gpu::selectMemoryType(vc.physicalDevice, memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
+            allocInfo.setPNext(&allocInfoFlags);
 
             memory = vc.device->allocateMemoryUnique(allocInfo);
         }
 
         // bind memory
         {
-            vk::BindAccelerationStructureMemoryInfoNV bindInfo = {};
+            vk::BindAccelerationStructureMemoryInfoKHR bindInfo = {};
             bindInfo.setAccelerationStructure(*structure);
             bindInfo.setMemory(*memory);
 
-            vc.device->bindAccelerationStructureMemoryNV(bindInfo);
+            vc.device->bindAccelerationStructureMemoryKHR(bindInfo);
         }
 
-        return {std::move(structure), std::move(memory)};
-    }
+        // setup scratch buffer
+        gpu::UniqueBuffer scratch;
+        {
+            vk::AccelerationStructureMemoryRequirementsInfoKHR memInfo = {};
+            memInfo.setAccelerationStructure(*structure);
+            memInfo.setType(vk::AccelerationStructureMemoryRequirementsTypeKHR::eBuildScratch);
 
-    gpu::UniqueBuffer createScratchBuffer(const vk::AccelerationStructureNV& structure)
-    {
-        VulkanContext& vc = RG().vc();
+            auto memoryRequirements = vc.device->getAccelerationStructureMemoryRequirementsKHR(memInfo).memoryRequirements;
 
-        vk::AccelerationStructureMemoryRequirementsInfoNV memInfo = {};
-        memInfo.setAccelerationStructure(structure);
-        memInfo.setType(vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch);
+            scratch =
+                std::make_unique<gpu::Buffer>(memoryRequirements.size, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                              vk::MemoryPropertyFlagBits::eDeviceLocal);
+        }
 
-        const auto scratchSize = vc.device->getAccelerationStructureMemoryRequirementsNV(memInfo).memoryRequirements.size;
-        return std::make_unique<gpu::Buffer>(scratchSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eDeviceLocal);
+        return {std::move(structure), std::move(memory), std::move(scratch)};
     }
 
 } // namespace
@@ -117,7 +109,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
 {
     VulkanContext& vc = RG().vc();
 
-    std::vector<VkGeometryInstanceNV> instances;
+    std::vector<vk::AccelerationStructureInstanceKHR> instances;
     std::vector<InstanceOffsetTableEntry> instanceOffsetTable;
 
     // Grab instances from scene.
@@ -138,34 +130,66 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
         const auto& materialBufferRef = entity.model->materialBufferRef;
 
         auto& entry = instanceOffsetTable.emplace_back();
-        entry.vertexBufferOffset = (uint32_t)(vertexBufferRef.offset / vertexBufferRef.elementSize);
-        entry.indexBufferOffset = (uint32_t)(indexBufferRef.offset / indexBufferRef.elementSize);
-        entry.materialBufferOffset = (uint32_t)(materialBufferRef.offset / materialBufferRef.elementSize);
+        entry.vertexBufferOffset = vertexBufferRef.offsetInElements();
+        entry.indexBufferOffset = indexBufferRef.offsetInElements();
+        entry.materialBufferOffset = materialBufferRef.offsetInElements();
 
         return true;
     });
 
-    // Setup acceleration structure.
+    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instances->setName("Instances");
+
+    m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instanceOffsetTable->setName("Instance Offset Table");
+
+    // setup
     {
-        m_info.setType(vk::AccelerationStructureTypeNV::eTopLevel);
-        m_info.setInstanceCount((uint32_t)instances.size());
-        m_info.setFlags(vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace);
+        vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+        geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
+        geometryTypeInfo.setMaxPrimitiveCount(instances.size());
 
-        vk::AccelerationStructureCreateInfoNV createInfo = {};
-        createInfo.setInfo(m_info);
+        vk::AccelerationStructureCreateInfoKHR createInfo = {};
+        createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        createInfo.setMaxGeometryCount(1);
+        createInfo.setPGeometryInfos(&geometryTypeInfo);
 
-        std::tie(m_structure, m_memory) = createAccelerationStructure(m_info);
-        vc.setObjectName(*m_structure, "TLAS");
-        vc.setObjectName(*m_memory, "TLAS");
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+
+        vc.setObjectName(*m_structure, "TLAS Structure");
+        vc.setObjectName(*m_memory, "TLAS Memory");
+        m_scratch->setName("TLAS Scratch");
     }
 
-    m_scratch = createScratchBuffer(*m_structure);
-    m_scratch->setName("TLAS");
+    // build
+    {
+        vk::AccelerationStructureGeometryInstancesDataKHR instancesData = {};
+        instancesData.setData(m_instances->address());
 
-    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingNV);
-    m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer);
+        vk::AccelerationStructureGeometryDataKHR geometryData = {};
+        geometryData.setInstances(instancesData);
 
-    cmd.buildAccelerationStructureNV(m_info, *m_instances, 0, false, *m_structure, nullptr, *m_scratch, 0);
+        std::array<vk::AccelerationStructureGeometryKHR, 1> geometries;
+        geometries[0].setGeometry(geometryData);
+        geometries[0].setGeometryType(vk::GeometryTypeKHR::eInstances);
+        geometries[0].setFlags(vk::GeometryFlagBitsKHR::eOpaque);
+
+        const auto pGeometires = geometries.data();
+
+        vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
+        buildInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+        buildInfo.setDstAccelerationStructure(*m_structure);
+        buildInfo.setGeometryCount(geometries.size());
+        buildInfo.setPpGeometries(&pGeometires);
+        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        buildInfo.setScratchData(m_scratch->address());
+
+        vk::AccelerationStructureBuildOffsetInfoKHR offset = {};
+        offset.setPrimitiveCount(instances.size());
+
+        cmd.buildAccelerationStructureKHR(buildInfo, &offset);
+    }
 
     m_descriptorInfo.setAccelerationStructureCount(1);
     m_descriptorInfo.setPAccelerationStructures(&*m_structure);
@@ -175,52 +199,71 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 {
     VulkanContext& vc = RG().vc();
 
-    vk::GeometryTrianglesNV triangles = {};
-    triangles.setVertexData(mesh.vertexBufferRef.buffer);
-    triangles.setVertexOffset(mesh.vertexBufferRef.offset);
-    triangles.setVertexCount(mesh.vertexBufferRef.elementCount());
-    triangles.setVertexStride(mesh.vertexBufferRef.elementSize);
-    triangles.setVertexFormat(vk::Format::eR32G32B32Sfloat);
-    triangles.setIndexData(mesh.indexBufferRef.buffer);
-    triangles.setIndexOffset(mesh.indexBufferRef.offset);
-    triangles.setIndexCount(mesh.indexBufferRef.elementCount());
-    triangles.setIndexType(vk::IndexType::eUint32);
+    // setup
+    {
+        vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+        geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eTriangles);
+        geometryTypeInfo.setMaxPrimitiveCount(mesh.numFaces());
+        geometryTypeInfo.setIndexType(vk::IndexType::eUint32);
+        geometryTypeInfo.setMaxVertexCount(mesh.vertices.size());
 
-    vk::GeometryDataNV geometryData = {};
-    geometryData.setTriangles(triangles);
+        vk::AccelerationStructureCreateInfoKHR createInfo = {};
+        createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        createInfo.setMaxGeometryCount(1);
+        createInfo.setPGeometryInfos(&geometryTypeInfo);
 
-    vk::GeometryNV geometry = {};
-    geometry.setGeometry(geometryData);
-    geometry.setGeometryType(vk::GeometryTypeNV::eTriangles);
-    geometry.setFlags(vk::GeometryFlagBitsNV::eOpaque);
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
 
-    vk::AccelerationStructureInfoNV info = {};
-    info.setType(vk::AccelerationStructureTypeNV::eBottomLevel);
-    info.setGeometryCount(1);
-    info.setPGeometries(&geometry);
-    info.setFlags(vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace);
+        vc.setObjectName(*m_structure, "BLAS Structure");
+        vc.setObjectName(*m_memory, "BLAS Memory");
+        m_scratch->setName("BLAS Scratch");
+    }
 
-    vk::AccelerationStructureCreateInfoNV createInfo = {};
-    createInfo.setInfo(info);
+    // build
+    {
+        vk::AccelerationStructureGeometryTrianglesDataKHR triangles = {};
+        triangles.setVertexData(mesh.vertexBufferRef.bufferAddress);
+        triangles.setVertexFormat(vk::Format::eR32G32B32Sfloat);
+        triangles.setVertexStride(mesh.vertexBufferRef.elementSize);
+        triangles.setIndexData(mesh.indexBufferRef.bufferAddress);
+        triangles.setIndexType(vk::IndexType::eUint32);
 
-    std::tie(m_structure, m_memory) = createAccelerationStructure(info);
-    vc.setObjectName(*m_structure, "BLAS");
-    vc.setObjectName(*m_memory, "BLAS");
+        vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
+        offsetInfo.setPrimitiveCount(mesh.numFaces());
+        offsetInfo.setPrimitiveOffset(mesh.indexBufferRef.offsetInBytes);
+        offsetInfo.setFirstVertex(mesh.vertexBufferRef.offsetInElements());
 
-    m_scratch = createScratchBuffer(*m_structure);
-    m_scratch->setName("BLAS");
+        vk::AccelerationStructureGeometryDataKHR geometryData = {};
+        geometryData.setTriangles(triangles);
 
-    cmd.buildAccelerationStructureNV(info, nullptr, 0, false, *m_structure, nullptr, *m_scratch, 0);
+        std::array<vk::AccelerationStructureGeometryKHR, 1> geometries;
+        geometries[0].setGeometry(geometryData);
+        geometries[0].setGeometryType(vk::GeometryTypeKHR::eTriangles);
+        geometries[0].setFlags(vk::GeometryFlagBitsKHR::eOpaque);
+
+        const auto pGeometires = geometries.data();
+
+        vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
+        buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        buildInfo.setDstAccelerationStructure(*m_structure);
+        buildInfo.setGeometryCount(geometries.size());
+        buildInfo.setPpGeometries(&pGeometires);
+        buildInfo.setScratchData(m_scratch->address());
+
+        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
+    }
 }
 
 void accelerationStructureBarrier(const vk::CommandBuffer& cmd)
 {
     vk::MemoryBarrier memoryBarrier = {};
-    memoryBarrier.setSrcAccessMask(vk::AccessFlagBits::eAccelerationStructureReadNV | vk::AccessFlagBits::eAccelerationStructureReadNV);
-    memoryBarrier.setDstAccessMask(vk::AccessFlagBits::eAccelerationStructureReadNV | vk::AccessFlagBits::eAccelerationStructureReadNV);
+    memoryBarrier.setSrcAccessMask(vk::AccessFlagBits::eAccelerationStructureReadKHR | vk::AccessFlagBits::eAccelerationStructureReadKHR);
+    memoryBarrier.setDstAccessMask(vk::AccessFlagBits::eAccelerationStructureReadKHR | vk::AccessFlagBits::eAccelerationStructureReadKHR);
 
-    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, vk::PipelineStageFlagBits::eAccelerationStructureBuildNV, {}, {memoryBarrier},
-                        {}, {});
+    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR, vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR, {},
+                        {memoryBarrier}, {}, {});
 }
 
 } // namespace raygun::render

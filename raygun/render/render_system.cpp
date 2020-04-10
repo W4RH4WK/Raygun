@@ -198,17 +198,20 @@ void RenderSystem::setupModelBuffers()
 
     auto [vertexCount, indexCount, materialCount] = getCounts(models, meshes);
 
-    m_vertexBuffer =
-        std::make_unique<gpu::Buffer>(vertexCount * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
-                                      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    m_vertexBuffer = std::make_unique<gpu::Buffer>(vertexCount * sizeof(Vertex),
+                                                   vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer
+                                                       | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     m_vertexBuffer->setName("Vertex Buffer");
 
-    m_indexBuffer =
-        std::make_unique<gpu::Buffer>(indexCount * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
-                                      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    m_indexBuffer = std::make_unique<gpu::Buffer>(indexCount * sizeof(uint32_t),
+                                                  vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eStorageBuffer
+                                                      | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     m_indexBuffer->setName("Index Buffer");
 
-    m_materialBuffer = std::make_unique<gpu::Buffer>(materialCount * sizeof(gpu::Material), vk::BufferUsageFlagBits::eStorageBuffer,
+    m_materialBuffer = std::make_unique<gpu::Buffer>(materialCount * sizeof(gpu::Material),
+                                                     vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                                                      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     m_materialBuffer->setName("Material Buffer");
 
@@ -277,14 +280,14 @@ void RenderSystem::updateVertexAndIndexBuffer(std::set<Mesh*>& meshes)
         const auto& indices = mesh->indices;
         const auto indexSize = indices.size() * sizeof(indices[0]);
 
-        mesh->vertexBufferRef.buffer = *m_vertexBuffer;
-        mesh->vertexBufferRef.offset = vertexOffset;
-        mesh->vertexBufferRef.size = vertexSize;
+        mesh->vertexBufferRef.bufferAddress = m_vertexBuffer->address();
+        mesh->vertexBufferRef.offsetInBytes = vertexOffset;
+        mesh->vertexBufferRef.sizeInBytes = vertexSize;
         mesh->vertexBufferRef.elementSize = sizeof(vertices[0]);
 
-        mesh->indexBufferRef.buffer = *m_indexBuffer;
-        mesh->indexBufferRef.offset = indexOffset;
-        mesh->indexBufferRef.size = indexSize;
+        mesh->indexBufferRef.bufferAddress = m_indexBuffer->address();
+        mesh->indexBufferRef.offsetInBytes = indexOffset;
+        mesh->indexBufferRef.sizeInBytes = indexSize;
         mesh->indexBufferRef.elementSize = sizeof(indices[0]);
 
         memcpy(vertexStart + vertexOffset, vertices.data(), vertexSize);
@@ -307,9 +310,9 @@ void RenderSystem::updateMaterialBuffer(std::vector<Model*>& models)
         const auto& materials = model->materials;
         const auto materialsSize = materials.size() * sizeof(gpu::Material);
 
-        model->materialBufferRef.buffer = *m_materialBuffer;
-        model->materialBufferRef.offset = materialOffset;
-        model->materialBufferRef.size = materialsSize;
+        model->materialBufferRef.bufferAddress = m_materialBuffer->address();
+        model->materialBufferRef.offsetInBytes = materialOffset;
+        model->materialBufferRef.sizeInBytes = materialsSize;
         model->materialBufferRef.elementSize = sizeof(gpu::Material);
 
         auto materialPos = materialStart + materialOffset;

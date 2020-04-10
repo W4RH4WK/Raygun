@@ -210,12 +210,17 @@ void VulkanContext::selectQueueFamily()
 void VulkanContext::setupDevice()
 {
     const std::vector<const char*> extensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-        VK_NV_RAY_TRACING_EXTENSION_NAME,
 #ifndef NDEBUG
         VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
 #endif
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+
+        // Ray Tracing
+        VK_NV_RAY_TRACING_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
     };
 
     const float queuePriorities[] = {1.0f};
@@ -237,6 +242,9 @@ void VulkanContext::setupDevice()
         queueInfos.push_back(presentQueueInfo);
     }
 
+    vk::PhysicalDeviceBufferDeviceAddressFeatures addressFeatures;
+    addressFeatures.setBufferDeviceAddress(true);
+
     vk::PhysicalDeviceFeatures feat;
     feat.setRobustBufferAccess(true);
 
@@ -245,6 +253,7 @@ void VulkanContext::setupDevice()
     info.setPQueueCreateInfos(queueInfos.data());
     info.setEnabledExtensionCount((uint32_t)extensions.size());
     info.setPpEnabledExtensionNames(extensions.data());
+    info.setPNext(&addressFeatures);
     info.setPEnabledFeatures(&feat);
 
     device = physicalDevice.createDeviceUnique(info);

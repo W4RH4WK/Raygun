@@ -47,7 +47,7 @@ Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryProper
     m_info.setBuffer(*m_buffer);
     m_info.setRange(size);
 
-    alloc(memoryType);
+    alloc(usage, memoryType);
 
     vc.device->bindBufferMemory(*m_buffer, *m_memory, 0);
 }
@@ -74,22 +74,37 @@ void Buffer::unmap()
     }
 }
 
+vk::DeviceAddress Buffer::address() const
+{
+    return vc.device->getBufferAddress({*m_buffer});
+}
+
 void Buffer::setName(string_view name)
 {
     vc.setObjectName(*m_buffer, name);
     vc.setObjectName(*m_memory, name);
 }
 
-void Buffer::alloc(const vk::MemoryPropertyFlags& memoryTypeFlags)
+void Buffer::alloc(vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memoryTypeFlags)
 {
     const auto requirements = vc.device->getBufferMemoryRequirements(*m_buffer);
 
     const auto memoryType = selectMemoryType(vc.physicalDevice, requirements.memoryTypeBits, memoryTypeFlags);
 
+    vk::MemoryAllocateFlagsInfo allocFlagsInfo = {};
+
+    if(usage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+        allocFlagsInfo.setFlags(vk::MemoryAllocateFlagBits::eDeviceAddress);
+    }
+
     m_allocInfo.setAllocationSize(requirements.size);
     m_allocInfo.setMemoryTypeIndex(memoryType);
+    m_allocInfo.setPNext(&allocFlagsInfo);
 
     m_memory = vc.device->allocateMemoryUnique(m_allocInfo);
+
+    // allocFlagsInfo is no longer available after alloc call.
+    m_allocInfo.setPNext(nullptr);
 }
 
 } // namespace raygun::gpu

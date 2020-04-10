@@ -28,11 +28,8 @@ VULKAN_TYPE(SwapchainKHR)
 VULKAN_TYPE(DebugReportCallbackEXT)
 VULKAN_TYPE(DisplayKHR)
 VULKAN_TYPE(DisplayModeKHR)
-VULKAN_TYPE(ObjectTableNVX)
-VULKAN_TYPE(IndirectCommandsLayoutNVX)
 VULKAN_TYPE(ValidationCacheEXT)
 VULKAN_TYPE(SamplerYcbcrConversion)
 VULKAN_TYPE(DescriptorUpdateTemplate)
-VULKAN_TYPE(AccelerationStructureNV)
 
 #undef VULKAN_TYPE

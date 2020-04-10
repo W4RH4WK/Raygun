@@ -35,17 +35,16 @@ class TopLevelAS {
   public:
     TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene);
 
-    operator vk::AccelerationStructureNV() const { return *m_structure; }
+    operator vk::AccelerationStructureKHR() const { return *m_structure; }
 
     const gpu::Buffer& instanceOffsetTable() const { return *m_instanceOffsetTable; }
 
-    const vk::WriteDescriptorSetAccelerationStructureNV& descriptorInfo() const { return m_descriptorInfo; }
+    const vk::WriteDescriptorSetAccelerationStructureKHR& descriptorInfo() const { return m_descriptorInfo; }
 
   private:
-    vk::AccelerationStructureInfoNV m_info = {};
-    vk::WriteDescriptorSetAccelerationStructureNV m_descriptorInfo = {};
+    vk::WriteDescriptorSetAccelerationStructureKHR m_descriptorInfo = {};
 
-    vk::UniqueAccelerationStructureNV m_structure;
+    vk::UniqueAccelerationStructureKHR m_structure;
     vk::UniqueDeviceMemory m_memory;
     gpu::UniqueBuffer m_instances;
     gpu::UniqueBuffer m_scratch;
@@ -63,10 +62,10 @@ class BottomLevelAS {
   public:
     BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh);
 
-    operator vk::AccelerationStructureNV() const { return *m_structure; }
+    operator vk::AccelerationStructureKHR() const { return *m_structure; }
 
   private:
-    vk::UniqueAccelerationStructureNV m_structure;
+    vk::UniqueAccelerationStructureKHR m_structure;
     vk::UniqueDeviceMemory m_memory;
     gpu::UniqueBuffer m_scratch;
 };
