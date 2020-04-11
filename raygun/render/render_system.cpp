@@ -109,7 +109,7 @@ void RenderSystem::render(Scene& scene)
             barrier.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
             barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
 
-            m_commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eRayTracingShaderNV | vk::PipelineStageFlagBits::eComputeShader,
+            m_commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eRayTracingShaderKHR | vk::PipelineStageFlagBits::eComputeShader,
                                              vk::PipelineStageFlagBits::eTransfer, vk::DependencyFlagBits::eByRegion, {}, {}, barrier);
         }
 

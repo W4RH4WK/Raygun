@@ -36,8 +36,8 @@ namespace raygun::render {
 
 Raytracer::Raytracer() : vc(RG().vc())
 {
-    auto properties = vc.physicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPropertiesNV>();
-    raytracingProperties = properties.get<vk::PhysicalDeviceRayTracingPropertiesNV>();
+    auto properties = vc.physicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPropertiesKHR>();
+    m_properties = properties.get<vk::PhysicalDeviceRayTracingPropertiesKHR>();
 
     setupRaytracingDescriptorSet();
 
@@ -87,9 +87,9 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 
 const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 {
-    cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, *m_pipeline);
+    cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, *m_pipeline);
 
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingNV, *m_pipelineLayout, 0, m_descriptorSet.set(), {});
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, *m_pipelineLayout, 0, m_descriptorSet.set(), {});
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalStart);
 
@@ -97,15 +97,35 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 
     initialImageBarrier(cmd);
 
-    const auto stride = raytracingProperties.shaderGroupHandleSize;
+    {
+        const auto progSize = m_properties.shaderGroupHandleSize;
+        const auto sbtSize = progSize * m_shaderGroups.size();
 
-    cmd.traceRaysNV(*m_sbtBuffer, m_raygenGroupIndex * stride,       //
-                    *m_sbtBuffer, m_missGroupIndex * stride, stride, //
-                    *m_sbtBuffer, m_hitGroupIndex * stride, stride,  //
-                    *m_sbtBuffer, 0, 0,                              //
-                    vc.windowSize.width, vc.windowSize.height, 1);
+        vk::StridedBufferRegionKHR rayGenSBT = {};
+        rayGenSBT.setBuffer(*m_sbtBuffer);
+        rayGenSBT.setOffset(m_raygenGroupIndex * progSize);
+        rayGenSBT.setStride(progSize);
+        rayGenSBT.setSize(sbtSize);
 
-    computeShaderImageBarrier(cmd, {m_baseImage.get(), m_normalImage.get(), m_roughImage.get()}, vk::PipelineStageFlagBits::eRayTracingShaderNV);
+        vk::StridedBufferRegionKHR rayMissSBT = {};
+        rayMissSBT.setBuffer(*m_sbtBuffer);
+        rayMissSBT.setOffset(m_missGroupIndex * progSize);
+        rayMissSBT.setStride(progSize);
+        rayMissSBT.setSize(sbtSize);
+
+        vk::StridedBufferRegionKHR rayHitSBT = {};
+        rayHitSBT.setBuffer(*m_sbtBuffer);
+        rayHitSBT.setOffset(m_hitGroupIndex * progSize);
+        rayHitSBT.setStride(progSize);
+        rayHitSBT.setSize(sbtSize);
+
+        vk::StridedBufferRegionKHR rayCallSBT = {};
+
+        cmd.traceRaysKHR(rayGenSBT, rayMissSBT, rayHitSBT, rayCallSBT, //
+                         vc.windowSize.width, vc.windowSize.height, 1);
+    }
+
+    computeShaderImageBarrier(cmd, {m_baseImage.get(), m_normalImage.get(), m_roughImage.get()}, vk::PipelineStageFlagBits::eRayTracingShaderKHR);
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyEnd);
 
@@ -204,44 +224,44 @@ void Raytracer::setupRaytracingDescriptorSet()
 {
     m_descriptorSet.setName("Ray Tracer");
 
-    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, 1, vk::DescriptorType::eAccelerationStructureNV,
-                               vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, 1, vk::DescriptorType::eAccelerationStructureKHR,
+                               vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eClosestHitKHR);
 
-    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_OUTPUT_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
-    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ROUGH_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
-    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_NORMAL_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_OUTPUT_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenKHR);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_ROUGH_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenKHR);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_NORMAL_IMAGE, 1, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenKHR);
 
     m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_UNIFORM_BUFFER, 1, vk::DescriptorType::eUniformBuffer,
-                               vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV | vk::ShaderStageFlagBits::eMissNV);
-    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_VERTEX_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
-    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INDEX_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
-    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_MATERIAL_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
+                               vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_VERTEX_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitKHR);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INDEX_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitKHR);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_MATERIAL_BUFFER, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitKHR);
 
-    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitNV);
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitKHR);
 
     m_descriptorSet.generate();
 }
 
 namespace {
 
-    vk::RayTracingShaderGroupCreateInfoNV generalShaderGroup(uint32_t generalShaderIndex)
+    vk::RayTracingShaderGroupCreateInfoKHR generalShaderGroup(uint32_t generalShaderIndex)
     {
-        vk::RayTracingShaderGroupCreateInfoNV info;
+        vk::RayTracingShaderGroupCreateInfoKHR info;
         info.setGeneralShader(generalShaderIndex);
-        info.setClosestHitShader(VK_SHADER_UNUSED_NV);
-        info.setAnyHitShader(VK_SHADER_UNUSED_NV);
-        info.setIntersectionShader(VK_SHADER_UNUSED_NV);
+        info.setClosestHitShader(VK_SHADER_UNUSED_KHR);
+        info.setAnyHitShader(VK_SHADER_UNUSED_KHR);
+        info.setIntersectionShader(VK_SHADER_UNUSED_KHR);
 
         return info;
     }
 
-    vk::RayTracingShaderGroupCreateInfoNV HitShaderGroup(uint32_t closestHitShaderIndex)
+    vk::RayTracingShaderGroupCreateInfoKHR HitShaderGroup(uint32_t closestHitShaderIndex)
     {
-        vk::RayTracingShaderGroupCreateInfoNV info{vk::RayTracingShaderGroupTypeNV::eTrianglesHitGroup};
-        info.setGeneralShader(VK_SHADER_UNUSED_NV);
+        vk::RayTracingShaderGroupCreateInfoKHR info{vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup};
+        info.setGeneralShader(VK_SHADER_UNUSED_KHR);
         info.setClosestHitShader(closestHitShaderIndex);
-        info.setAnyHitShader(VK_SHADER_UNUSED_NV);
-        info.setIntersectionShader(VK_SHADER_UNUSED_NV);
+        info.setAnyHitShader(VK_SHADER_UNUSED_KHR);
+        info.setIntersectionShader(VK_SHADER_UNUSED_KHR);
 
         return info;
     }
@@ -255,30 +275,28 @@ void Raytracer::setupRaytracingPipeline()
     std::vector<vk::PipelineShaderStageCreateInfo> stages;
 
     m_raygenGroupIndex = (uint32_t)m_shaderGroups.size();
-    const auto raygenShader = RG().resourceManager().loadShader("raygen.rgen");
     {
+        const auto raygenShader = RG().resourceManager().loadShader("raygen.rgen");
         m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
-        stages.push_back(raygenShader->shaderStageInfo(vk::ShaderStageFlagBits::eRaygenNV));
+        stages.push_back(raygenShader->shaderStageInfo(vk::ShaderStageFlagBits::eRaygenKHR));
     }
 
     m_missGroupIndex = (uint32_t)m_shaderGroups.size();
-    const auto missShader = RG().resourceManager().loadShader("miss.rmiss");
     {
+        const auto missShader = RG().resourceManager().loadShader("miss.rmiss");
         m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
-        stages.push_back(missShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissNV));
-    }
+        stages.push_back(missShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissKHR));
 
-    const auto shadowMissShader = RG().resourceManager().loadShader("shadowMiss.rmiss");
-    {
+        const auto shadowMissShader = RG().resourceManager().loadShader("shadowMiss.rmiss");
         m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
-        stages.push_back(shadowMissShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissNV));
+        stages.push_back(shadowMissShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissKHR));
     }
 
     m_hitGroupIndex = (uint32_t)m_shaderGroups.size();
-    const auto closestHitShader = RG().resourceManager().loadShader("closesthit.rchit");
     {
+        const auto closestHitShader = RG().resourceManager().loadShader("closesthit.rchit");
         m_shaderGroups.push_back(HitShaderGroup((uint32_t)stages.size()));
-        stages.push_back(closestHitShader->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitNV));
+        stages.push_back(closestHitShader->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitKHR));
     }
 
     {
@@ -291,7 +309,7 @@ void Raytracer::setupRaytracingPipeline()
     }
 
     {
-        vk::RayTracingPipelineCreateInfoNV info = {};
+        vk::RayTracingPipelineCreateInfoKHR info = {};
         info.setStageCount((uint32_t)stages.size());
         info.setPStages(stages.data());
         info.setGroupCount((uint32_t)m_shaderGroups.size());
@@ -299,19 +317,31 @@ void Raytracer::setupRaytracingPipeline()
         info.setMaxRecursionDepth(7);
         info.setLayout(*m_pipelineLayout);
 
-        m_pipeline = vc.device->createRayTracingPipelineNVUnique(nullptr, info);
+        // FIXME: Vulkan SDK >= 1.2.136
+        // https://github.com/KhronosGroup/Vulkan-Hpp/issues/557
+        {
+            const auto vkCreateRayTracingPipelinesKHR =
+                reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vc.device->getProcAddr("vkCreateRayTracingPipelinesKHR"));
+            RAYGUN_ASSERT(vkCreateRayTracingPipelinesKHR);
+
+            VkPipeline pipeline;
+            const auto result = vkCreateRayTracingPipelinesKHR(*vc.device, nullptr, 1, &VkRayTracingPipelineCreateInfoKHR(info), nullptr, &pipeline);
+            RAYGUN_ASSERT(result == VK_SUCCESS);
+
+            m_pipeline = gpu::wrapUnique<vk::Pipeline>(pipeline, *vc.device);
+        }
         vc.setObjectName(*m_pipeline, "Ray Tracer");
     }
 }
 
 void Raytracer::setupShaderBindingTable()
 {
-    const auto sbtSize = m_shaderGroups.size() * raytracingProperties.shaderGroupHandleSize;
+    const auto sbtSize = m_shaderGroups.size() * m_properties.shaderGroupHandleSize;
 
-    m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingNV, vk::MemoryPropertyFlagBits::eHostVisible);
+    m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingKHR, vk::MemoryPropertyFlagBits::eHostVisible);
     m_sbtBuffer->setName("Shader Binding Table");
 
-    vc.device->getRayTracingShaderGroupHandlesNV(*m_pipeline, 0, (uint32_t)m_shaderGroups.size(), sbtSize, m_sbtBuffer->map());
+    vc.device->getRayTracingShaderGroupHandlesKHR(*m_pipeline, 0, (uint32_t)m_shaderGroups.size(), sbtSize, m_sbtBuffer->map());
 
     m_sbtBuffer->unmap();
 }
@@ -358,7 +388,7 @@ void Raytracer::initialImageBarrier(vk::CommandBuffer& cmd)
         barrier.setSubresourceRange(gpu::defaultImageSubresourceRange());
     }
 
-    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eRayTracingShaderNV, //
+    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eRayTracingShaderKHR, //
                         vk::DependencyFlagBits::eByRegion, {}, {}, imageBarriers);
 }
 

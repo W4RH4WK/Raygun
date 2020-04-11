@@ -63,9 +63,9 @@ struct Raytracer {
     void computeShaderImageBarrier(vk::CommandBuffer& cmd, std::initializer_list<gpu::Image*> images,
                                    vk::PipelineStageFlags srcStageMask = vk::PipelineStageFlagBits::eComputeShader);
 
-    vk::PhysicalDeviceRayTracingPropertiesNV raytracingProperties = {};
+    vk::PhysicalDeviceRayTracingPropertiesKHR m_properties = {};
 
-    std::vector<vk::RayTracingShaderGroupCreateInfoNV> m_shaderGroups;
+    std::vector<vk::RayTracingShaderGroupCreateInfoKHR> m_shaderGroups;
 
     UniqueTopLevelAS m_topLevelAS;
 
