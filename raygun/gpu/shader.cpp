@@ -41,7 +41,7 @@ Shader::Shader(string_view, const fs::path& path)
     vc.setObjectName(*shaderModule, path.stem().string());
 }
 
-vk::PipelineShaderStageCreateInfo Shader::shaderStageInfo(vk::ShaderStageFlagBits shaderStages)
+vk::PipelineShaderStageCreateInfo Shader::shaderStageInfo(vk::ShaderStageFlagBits shaderStages) const
 {
     vk::PipelineShaderStageCreateInfo info = {};
 

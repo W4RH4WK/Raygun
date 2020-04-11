@@ -97,33 +97,8 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 
     initialImageBarrier(cmd);
 
-    {
-        const auto progSize = m_properties.shaderGroupHandleSize;
-        const auto sbtSize = progSize * m_shaderGroups.size();
-
-        vk::StridedBufferRegionKHR rayGenSBT = {};
-        rayGenSBT.setBuffer(*m_sbtBuffer);
-        rayGenSBT.setOffset(m_raygenGroupIndex * progSize);
-        rayGenSBT.setStride(progSize);
-        rayGenSBT.setSize(sbtSize);
-
-        vk::StridedBufferRegionKHR rayMissSBT = {};
-        rayMissSBT.setBuffer(*m_sbtBuffer);
-        rayMissSBT.setOffset(m_missGroupIndex * progSize);
-        rayMissSBT.setStride(progSize);
-        rayMissSBT.setSize(sbtSize);
-
-        vk::StridedBufferRegionKHR rayHitSBT = {};
-        rayHitSBT.setBuffer(*m_sbtBuffer);
-        rayHitSBT.setOffset(m_hitGroupIndex * progSize);
-        rayHitSBT.setStride(progSize);
-        rayHitSBT.setSize(sbtSize);
-
-        vk::StridedBufferRegionKHR rayCallSBT = {};
-
-        cmd.traceRaysKHR(rayGenSBT, rayMissSBT, rayHitSBT, rayCallSBT, //
-                         vc.windowSize.width, vc.windowSize.height, 1);
-    }
+    cmd.traceRaysKHR(m_raygenSbt, m_missSbt, m_hitSbt, m_callableSbt, //
+                     vc.windowSize.width, vc.windowSize.height, 1);
 
     computeShaderImageBarrier(cmd, {m_baseImage.get(), m_normalImage.get(), m_roughImage.get()}, vk::PipelineStageFlagBits::eRayTracingShaderKHR);
 
@@ -268,36 +243,74 @@ namespace {
 
 } // namespace
 
+namespace {
+
+    vk::RayTracingShaderGroupCreateInfoKHR generalShaderGroupInfo(uint32_t index)
+    {
+        vk::RayTracingShaderGroupCreateInfoKHR info = {};
+        info.setGeneralShader(index);
+        info.setClosestHitShader(VK_SHADER_UNUSED_KHR);
+        info.setAnyHitShader(VK_SHADER_UNUSED_KHR);
+        info.setIntersectionShader(VK_SHADER_UNUSED_KHR);
+
+        return info;
+    }
+
+    vk::RayTracingShaderGroupCreateInfoKHR closestHitShaderGroupInfo(uint32_t index)
+    {
+        vk::RayTracingShaderGroupCreateInfoKHR info = {vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup};
+        info.setGeneralShader(VK_SHADER_UNUSED_KHR);
+        info.setClosestHitShader(index);
+        info.setAnyHitShader(VK_SHADER_UNUSED_KHR);
+        info.setIntersectionShader(VK_SHADER_UNUSED_KHR);
+
+        return info;
+    }
+
+} // namespace
+
 void Raytracer::setupRaytracingPipeline()
 {
-    m_shaderGroups.clear();
+    const auto sbtStride = m_properties.shaderGroupHandleSize;
 
     std::vector<vk::PipelineShaderStageCreateInfo> stages;
+    std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups;
 
-    m_raygenGroupIndex = (uint32_t)m_shaderGroups.size();
+    // raygen group
+    const auto raygenShader = RG().resourceManager().loadShader("raygen.rgen");
     {
-        const auto raygenShader = RG().resourceManager().loadShader("raygen.rgen");
-        m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
+        m_raygenSbt.setOffset(groups.size() * sbtStride);
+
         stages.push_back(raygenShader->shaderStageInfo(vk::ShaderStageFlagBits::eRaygenKHR));
+        groups.push_back(generalShaderGroupInfo(groups.size()));
     }
 
-    m_missGroupIndex = (uint32_t)m_shaderGroups.size();
+    // miss group
+    const auto missShader = RG().resourceManager().loadShader("miss.rmiss");
+    const auto shadowMissShader = RG().resourceManager().loadShader("shadowMiss.rmiss");
     {
-        const auto missShader = RG().resourceManager().loadShader("miss.rmiss");
-        m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
+        m_missSbt.setOffset(groups.size() * sbtStride);
+
         stages.push_back(missShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissKHR));
+        groups.push_back(generalShaderGroupInfo(groups.size()));
 
-        const auto shadowMissShader = RG().resourceManager().loadShader("shadowMiss.rmiss");
-        m_shaderGroups.push_back(generalShaderGroup((uint32_t)stages.size()));
         stages.push_back(shadowMissShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissKHR));
+        groups.push_back(generalShaderGroupInfo(groups.size()));
     }
 
-    m_hitGroupIndex = (uint32_t)m_shaderGroups.size();
+    // hit group
+    const auto closestHitShader = RG().resourceManager().loadShader("closesthit.rchit");
     {
-        const auto closestHitShader = RG().resourceManager().loadShader("closesthit.rchit");
-        m_shaderGroups.push_back(HitShaderGroup((uint32_t)stages.size()));
+        m_hitSbt.setOffset(groups.size() * sbtStride);
+
         stages.push_back(closestHitShader->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitKHR));
+        groups.push_back(closestHitShaderGroupInfo(groups.size()));
     }
+
+    m_raygenSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
+    m_missSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
+    m_hitSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
+    m_callableSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
 
     {
         vk::PipelineLayoutCreateInfo info = {};
@@ -310,10 +323,10 @@ void Raytracer::setupRaytracingPipeline()
 
     {
         vk::RayTracingPipelineCreateInfoKHR info = {};
-        info.setStageCount((uint32_t)stages.size());
+        info.setStageCount(stages.size());
         info.setPStages(stages.data());
-        info.setGroupCount((uint32_t)m_shaderGroups.size());
-        info.setPGroups(m_shaderGroups.data());
+        info.setGroupCount(groups.size());
+        info.setPGroups(groups.data());
         info.setMaxRecursionDepth(7);
         info.setLayout(*m_pipelineLayout);
 
@@ -336,14 +349,20 @@ void Raytracer::setupRaytracingPipeline()
 
 void Raytracer::setupShaderBindingTable()
 {
-    const auto sbtSize = m_shaderGroups.size() * m_properties.shaderGroupHandleSize;
+    const auto sbtSize = m_raygenSbt.size;
+    const auto groupCount = m_raygenSbt.size / m_raygenSbt.stride;
 
     m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingKHR, vk::MemoryPropertyFlagBits::eHostVisible);
     m_sbtBuffer->setName("Shader Binding Table");
 
-    vc.device->getRayTracingShaderGroupHandlesKHR(*m_pipeline, 0, (uint32_t)m_shaderGroups.size(), sbtSize, m_sbtBuffer->map());
+    vc.device->getRayTracingShaderGroupHandlesKHR(*m_pipeline, 0, groupCount, sbtSize, m_sbtBuffer->map());
 
     m_sbtBuffer->unmap();
+
+    m_raygenSbt.setBuffer(*m_sbtBuffer);
+    m_missSbt.setBuffer(*m_sbtBuffer);
+    m_hitSbt.setBuffer(*m_sbtBuffer);
+    m_callableSbt.setBuffer(*m_sbtBuffer);
 }
 
 void Raytracer::setupPostprocessing()

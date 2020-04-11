@@ -27,7 +27,7 @@ namespace raygun::gpu {
 struct Shader {
     Shader(string_view name, const fs::path& path);
 
-    vk::PipelineShaderStageCreateInfo shaderStageInfo(vk::ShaderStageFlagBits shaderStages);
+    vk::PipelineShaderStageCreateInfo shaderStageInfo(vk::ShaderStageFlagBits shaderStages) const;
 
     vk::UniqueShaderModule shaderModule;
 };

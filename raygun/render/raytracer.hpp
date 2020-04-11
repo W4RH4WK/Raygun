@@ -65,18 +65,17 @@ struct Raytracer {
 
     vk::PhysicalDeviceRayTracingPropertiesKHR m_properties = {};
 
-    std::vector<vk::RayTracingShaderGroupCreateInfoKHR> m_shaderGroups;
-
     UniqueTopLevelAS m_topLevelAS;
 
     gpu::DescriptorSet m_descriptorSet;
 
+    vk::StridedBufferRegionKHR m_raygenSbt;
+    vk::StridedBufferRegionKHR m_missSbt;
+    vk::StridedBufferRegionKHR m_hitSbt;
+    vk::StridedBufferRegionKHR m_callableSbt;
+
     vk::UniquePipeline m_pipeline;
     vk::UniquePipelineLayout m_pipelineLayout;
-
-    uint32_t m_raygenGroupIndex = 0;
-    uint32_t m_missGroupIndex = 0;
-    uint32_t m_hitGroupIndex = 0;
 
     gpu::UniqueBuffer m_sbtBuffer;
 
