@@ -44,7 +44,7 @@ namespace {
         const auto transform = glm::transpose(entity.globalTransform().toMat4());
         memcpy(&instance.transform, &transform, sizeof(instance.transform));
 
-        const auto blasAddress = device.getAccelerationStructureAddressKHR({*entity.model->bottomLevelAS});
+        const auto blasAddress = device.getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*entity.model->bottomLevelAS)});
         instance.setAccelerationStructureReference(blasAddress);
 
         return instance;
@@ -147,7 +147,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
     {
         vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
         geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
-        geometryTypeInfo.setMaxPrimitiveCount(instances.size());
+        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)instances.size());
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
@@ -180,13 +180,13 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
         vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
         buildInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
         buildInfo.setDstAccelerationStructure(*m_structure);
-        buildInfo.setGeometryCount(geometries.size());
+        buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
         buildInfo.setScratchData(m_scratch->address());
 
         vk::AccelerationStructureBuildOffsetInfoKHR offset = {};
-        offset.setPrimitiveCount(instances.size());
+        offset.setPrimitiveCount((uint32_t)instances.size());
 
         cmd.buildAccelerationStructureKHR(buildInfo, &offset);
     }
@@ -203,9 +203,9 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
     {
         vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
         geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eTriangles);
-        geometryTypeInfo.setMaxPrimitiveCount(mesh.numFaces());
+        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)mesh.numFaces());
         geometryTypeInfo.setIndexType(vk::IndexType::eUint32);
-        geometryTypeInfo.setMaxVertexCount(mesh.vertices.size());
+        geometryTypeInfo.setMaxVertexCount((uint32_t)mesh.vertices.size());
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
@@ -230,7 +230,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
         triangles.setIndexType(vk::IndexType::eUint32);
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
-        offsetInfo.setPrimitiveCount(mesh.numFaces());
+        offsetInfo.setPrimitiveCount((uint32_t)mesh.numFaces());
         offsetInfo.setPrimitiveOffset(mesh.indexBufferRef.offsetInBytes);
         offsetInfo.setFirstVertex(mesh.vertexBufferRef.offsetInElements());
 
@@ -248,7 +248,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
         buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
         buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
         buildInfo.setDstAccelerationStructure(*m_structure);
-        buildInfo.setGeometryCount(geometries.size());
+        buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setScratchData(m_scratch->address());
 

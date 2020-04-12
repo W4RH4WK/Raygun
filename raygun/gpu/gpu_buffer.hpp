@@ -66,13 +66,13 @@ using UniqueBuffer = std::unique_ptr<Buffer>;
 /// Reference into a buffer with offset and size.
 struct BufferRef {
     vk::DeviceAddress bufferAddress = 0;
-    vk::DeviceSize offsetInBytes = 0;
-    vk::DeviceSize sizeInBytes = 0;
-    vk::DeviceSize elementSize = 1;
+    uint32_t offsetInBytes = 0;
+    uint32_t sizeInBytes = 0;
+    uint32_t elementSize = 1;
 
-    uint32_t offsetInElements() const { return (uint32_t)(offsetInBytes / elementSize); }
+    uint32_t offsetInElements() const { return offsetInBytes / elementSize; }
 
-    uint32_t sizeInElements() const { return (uint32_t)(sizeInBytes / elementSize); }
+    uint32_t sizeInElements() const { return sizeInBytes / elementSize; }
 };
 
 /// Copy the data from an std::vector to a dedicated GPU buffer.

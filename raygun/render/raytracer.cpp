@@ -282,7 +282,7 @@ void Raytracer::setupRaytracingPipeline()
         m_raygenSbt.setOffset(groups.size() * sbtStride);
 
         stages.push_back(raygenShader->shaderStageInfo(vk::ShaderStageFlagBits::eRaygenKHR));
-        groups.push_back(generalShaderGroupInfo(groups.size()));
+        groups.push_back(generalShaderGroupInfo((uint32_t)groups.size()));
     }
 
     // miss group
@@ -292,10 +292,10 @@ void Raytracer::setupRaytracingPipeline()
         m_missSbt.setOffset(groups.size() * sbtStride);
 
         stages.push_back(missShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissKHR));
-        groups.push_back(generalShaderGroupInfo(groups.size()));
+        groups.push_back(generalShaderGroupInfo((uint32_t)groups.size()));
 
         stages.push_back(shadowMissShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissKHR));
-        groups.push_back(generalShaderGroupInfo(groups.size()));
+        groups.push_back(generalShaderGroupInfo((uint32_t)groups.size()));
     }
 
     // hit group
@@ -304,7 +304,7 @@ void Raytracer::setupRaytracingPipeline()
         m_hitSbt.setOffset(groups.size() * sbtStride);
 
         stages.push_back(closestHitShader->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitKHR));
-        groups.push_back(closestHitShaderGroupInfo(groups.size()));
+        groups.push_back(closestHitShaderGroupInfo((uint32_t)groups.size()));
     }
 
     m_raygenSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
@@ -323,9 +323,9 @@ void Raytracer::setupRaytracingPipeline()
 
     {
         vk::RayTracingPipelineCreateInfoKHR info = {};
-        info.setStageCount(stages.size());
+        info.setStageCount((uint32_t)stages.size());
         info.setPStages(stages.data());
-        info.setGroupCount(groups.size());
+        info.setGroupCount((uint32_t)groups.size());
         info.setPGroups(groups.data());
         info.setMaxRecursionDepth(7);
         info.setLayout(*m_pipelineLayout);
@@ -350,7 +350,7 @@ void Raytracer::setupRaytracingPipeline()
 void Raytracer::setupShaderBindingTable()
 {
     const auto sbtSize = m_raygenSbt.size;
-    const auto groupCount = m_raygenSbt.size / m_raygenSbt.stride;
+    const auto groupCount = (uint32_t)(m_raygenSbt.size / m_raygenSbt.stride);
 
     m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingKHR, vk::MemoryPropertyFlagBits::eHostVisible);
     m_sbtBuffer->setName("Shader Binding Table");

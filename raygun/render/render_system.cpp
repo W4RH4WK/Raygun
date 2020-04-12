@@ -268,17 +268,17 @@ void RenderSystem::updateUniformBuffer(const Camera& camera)
 void RenderSystem::updateVertexAndIndexBuffer(std::set<Mesh*>& meshes)
 {
     const auto vertexStart = static_cast<uint8_t*>(m_vertexBuffer->map());
-    vk::DeviceSize vertexOffset = 0;
+    uint32_t vertexOffset = 0;
 
     const auto indexStart = static_cast<uint8_t*>(m_indexBuffer->map());
-    vk::DeviceSize indexOffset = 0;
+    uint32_t indexOffset = 0;
 
     for(const auto& mesh: meshes) {
         const auto& vertices = mesh->vertices;
-        const auto vertexSize = vertices.size() * sizeof(vertices[0]);
+        const auto vertexSize = (uint32_t)(vertices.size() * sizeof(vertices[0]));
 
         const auto& indices = mesh->indices;
-        const auto indexSize = indices.size() * sizeof(indices[0]);
+        const auto indexSize = (uint32_t)(indices.size() * sizeof(indices[0]));
 
         mesh->vertexBufferRef.bufferAddress = m_vertexBuffer->address();
         mesh->vertexBufferRef.offsetInBytes = vertexOffset;
@@ -304,11 +304,11 @@ void RenderSystem::updateVertexAndIndexBuffer(std::set<Mesh*>& meshes)
 void RenderSystem::updateMaterialBuffer(std::vector<Model*>& models)
 {
     const auto materialStart = static_cast<uint8_t*>(m_materialBuffer->map());
-    vk::DeviceSize materialOffset = 0;
+    uint32_t materialOffset = 0;
 
     for(const auto& model: models) {
         const auto& materials = model->materials;
-        const auto materialsSize = materials.size() * sizeof(gpu::Material);
+        const auto materialsSize = (uint32_t)(materials.size() * sizeof(gpu::Material));
 
         model->materialBufferRef.bufferAddress = m_materialBuffer->address();
         model->materialBufferRef.offsetInBytes = materialOffset;
