@@ -2,14 +2,14 @@
     <img src="docs/logo.png" title="Raygun" alt="Logo" />
 </p>
 
-Raygun is a simplistic game engine built around [NVIDIA Vulkan Ray Tracing].
-Therefore, a GPU supporting NVIDIA Ray Tracing is required.
+Raygun is a simplistic game engine built around [Vulkan Ray Tracing].
+Therefore, a GPU supporting hardware ray tracing is required.
 
 [PhysX] is used as physics engine, while [OpenAL] enables audio support.
 For window and input management, [GLFW] is utilized.
 Debugging and profiling information is displayed via [ImGui].
 
-[NVIDIA Vulkan Ray Tracing]: https://devblogs.nvidia.com/vulkan-raytracing/
+[Vulkan Ray Tracing]: https://www.khronos.org/blog/ray-tracing-in-vulkan
 [PhysX]: https://www.geforce.com/hardware/technology/physx/
 [OpenAL]: https://openal-soft.org/
 [GLFW]: https://www.glfw.org/
@@ -23,7 +23,7 @@ Debugging and profiling information is displayed via [ImGui].
 
 ## Features
 
-- Vulkan-based renderer using NVIDIA Ray Tracing extension
+- Vulkan-based renderer using the Vulkan Ray Tracing extension
   - Compute-shader support
   - Integrated profiler
   - Validation layer enabled (in debug builds)
@@ -68,7 +68,7 @@ Debugging and profiling information is displayed via [ImGui].
 ## Development Notes
 
 - Shaders are automatically compiled at build-time
-- Use Vulkan SDK `1.2.131`
+- Use Vulkan SDK `1.2.135`
 - For generating fonts using the provided script, `blender.exe` should be in `PATH`
 - A Blender plugin is provided to enable instant scene export
 
