@@ -21,7 +21,7 @@
 // IN THE SOFTWARE.
 
 #version 460
-#extension GL_NV_ray_tracing : require
+#extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_GOOGLE_include_directive : enable
 
@@ -31,7 +31,7 @@ void main()
 {
     // NOTE: with different order of these operations, strange artifacts on shadow boundary
     // Driver 430.86
-    ivec2 pos = ivec2(gl_LaunchIDNV.xy);
+    ivec2 pos = ivec2(gl_LaunchIDEXT.xy);
     mat3x4 result = traceRay(ubo.numSamples);
     imageStore(image, pos, result[0]);
     imageStore(normalImage, pos, result[1]);

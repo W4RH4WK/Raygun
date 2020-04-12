@@ -21,9 +21,9 @@
 // IN THE SOFTWARE.
 
 #ifdef RAYGEN
-    #define PAYLOADTYPE rayPayloadNV
+    #define PAYLOADTYPE rayPayloadEXT
 #else
-    #define PAYLOADTYPE rayPayloadInNV
+    #define PAYLOADTYPE rayPayloadInEXT
 #endif
 
 layout(location = 0) PAYLOADTYPE struct {

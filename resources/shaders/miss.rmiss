@@ -21,7 +21,7 @@
 // IN THE SOFTWARE.
 
 #version 460
-#extension GL_NV_ray_tracing : require
+#extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_GOOGLE_include_directive : enable
 
@@ -37,8 +37,8 @@ layout(binding = RAYGUN_RAYTRACER_BINDING_UNIFORM_BUFFER, set = 0) uniform Unifo
 
 vec3 skyMix(vec3 sunTone, vec3 skyTone, vec3 scatterTone, float scatterFactor, float powFactor)
 {
-    vec3 rayDir = normalize(gl_WorldRayDirectionNV);
-    float y = abs(gl_WorldRayDirectionNV.y + 1.5) / 3.0;
+    vec3 rayDir = normalize(gl_WorldRayDirectionEXT);
+    float y = abs(gl_WorldRayDirectionEXT.y + 1.5) / 3.0;
 
     float sun = 1.0 - distance(rayDir, normalize(-ubo.lightDir));
     sun = clamp(sun, 0.0, 2.0);

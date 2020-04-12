@@ -22,7 +22,7 @@
 
 #include "raytracer_bindings.h"
 
-layout(binding = RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, set = 0) uniform accelerationStructureNV topLevelAS;
+layout(binding = RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = RAYGUN_RAYTRACER_BINDING_OUTPUT_IMAGE, set = 0, rgba16f) restrict uniform image2D image;
 layout(binding = RAYGUN_RAYTRACER_BINDING_ROUGH_IMAGE, set = 0, rgba16f) restrict uniform image2D roughImage;
 layout(binding = RAYGUN_RAYTRACER_BINDING_NORMAL_IMAGE, set = 0, rgba16f) restrict uniform image2D normalImage;
@@ -76,14 +76,14 @@ mat3x4 traceRay(int numSamples)
     // float prevRough = 0;
 
     const vec4 origin = ubo.viewInverse * vec4(0, 0, 0, 1);
-    const uint rayFlags = gl_RayFlagsOpaqueNV;
+    const uint rayFlags = gl_RayFlagsOpaqueEXT;
     const uint cullMask = 0xff;
     const float tmin = 0.001;
     const float tmax = 10000.0;
 
     for(int i = 0; i < numSamples; ++i) {
-        const vec2 pixelCenter = vec2(gl_LaunchIDNV.xy) + vec2(0.5) + vAAOffsets[min(numSamples, 8)][i % 8];
-        const vec2 inUV = pixelCenter / vec2(gl_LaunchSizeNV.xy);
+        const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5) + vAAOffsets[min(numSamples, 8)][i % 8];
+        const vec2 inUV = pixelCenter / vec2(gl_LaunchSizeEXT.xy);
         const vec2 d = inUV * 2.0 - 1.0;
 
         const vec4 target = ubo.projInverse * vec4(d.x, d.y, 1, 1);
@@ -99,7 +99,7 @@ mat3x4 traceRay(int numSamples)
         payload.recDepth = 0;
         payload.reflectContribution = 0;
 
-        traceNV(topLevelAS, rayFlags, cullMask, 0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/, origin.xyz, tmin, direction.xyz, tmax,
+        traceRayEXT(topLevelAS, rayFlags, cullMask, 0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/, origin.xyz, tmin, direction.xyz, tmax,
                 0 /*payload*/);
 
         color += payload.hitValue;

@@ -21,15 +21,15 @@
 // IN THE SOFTWARE.
 
 #version 460
-#extension GL_NV_ray_tracing : require
+#extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_GOOGLE_include_directive : enable
 
 #include "payload.h"
 #include "raytracer_bindings.h"
 
-hitAttributeNV vec3 attribs;
-layout(binding = RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, set = 0) uniform accelerationStructureNV topLevelAS;
+hitAttributeEXT vec3 attribs;
+layout(binding = RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, set = 0) uniform accelerationStructureEXT topLevelAS;
 
 layout(binding = RAYGUN_RAYTRACER_BINDING_UNIFORM_BUFFER, set = 0) uniform UniformBufferObject{
 #include "uniform_buffer_object.def"
@@ -73,7 +73,7 @@ instanceOffsetTable;
 
 void gridEffect(inout Material mat, vec3 pos)
 {
-    float aa = (payload.refDepth + gl_HitTNV + 8) / 30;
+    float aa = (payload.refDepth + gl_HitTEXT + 8) / 30;
     float aa2 = aa / 2.0;
 
     float minmod = min(abs(mod((pos.x + 1000) * 10 + aa2, 20) - aa2), abs(mod((pos.z + 1000) * 10 + aa2, 20) - aa2));
@@ -95,27 +95,27 @@ void main()
     // Gather inputs (barycentrics, vertices and material)
     const vec3 barycentrics = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);
 
-    uint indexBufferOffset = instanceOffsetTable.e[gl_InstanceCustomIndexNV].indexBufferOffset;
+    uint indexBufferOffset = instanceOffsetTable.e[gl_InstanceCustomIndexEXT].indexBufferOffset;
     uint i0 = indices.i[indexBufferOffset + 3 * gl_PrimitiveID + 0];
     uint i1 = indices.i[indexBufferOffset + 3 * gl_PrimitiveID + 1];
     uint i2 = indices.i[indexBufferOffset + 3 * gl_PrimitiveID + 2];
 
-    uint vertexBufferOffset = instanceOffsetTable.e[gl_InstanceCustomIndexNV].vertexBufferOffset;
+    uint vertexBufferOffset = instanceOffsetTable.e[gl_InstanceCustomIndexEXT].vertexBufferOffset;
     Vertex v0 = vertices.v[vertexBufferOffset + i0];
     Vertex v1 = vertices.v[vertexBufferOffset + i1];
     Vertex v2 = vertices.v[vertexBufferOffset + i2];
 
-    uint materialBufferOffset = instanceOffsetTable.e[gl_InstanceCustomIndexNV].materialBufferOffset + v0.matIndex;
+    uint materialBufferOffset = instanceOffsetTable.e[gl_InstanceCustomIndexEXT].materialBufferOffset + v0.matIndex;
     Material mat = materials.m[materialBufferOffset];
 
     // Compute world space position
     float tmin = 0.01;
     float tmax = 1000.0;
-    vec3 origin = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+    vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
     // Transform normal into world space
     vec3 vn = v0.normal * barycentrics.x + v1.normal * barycentrics.y + v2.normal * barycentrics.z;
-    mat3 objToWorldNoTranslation = mat3(gl_ObjectToWorldNV);
+    mat3 objToWorldNoTranslation = mat3(gl_ObjectToWorldEXT);
     vec3 vnInWorldSpace = normalize(objToWorldNoTranslation * vn);
 
     // Material effects
@@ -124,13 +124,13 @@ void main()
     // Check if we are a shadow tracing ray, and if so, handle appropriately
     if(payload.rayType == RT_SHADOW_INTERNAL) {
         // larger value -> more material contribution to shadow
-        float thicknessModulation = clamp(gl_HitTNV * (1 - mat.transparency) * 10, 0, 1);
+        float thicknessModulation = clamp(gl_HitTEXT * (1 - mat.transparency) * 10, 0, 1);
         vec3 shadowCol = payload.hitValue - mix(vec3(0), normalize(1.1 - mat.diffuse) + 0.1, thicknessModulation);
 
         if(payload.recDepth < ubo.maxRecursions) {
             payload.rayType = RT_SHADOW_TRACE;
             payload.recDepth++;
-            traceNV(topLevelAS, gl_RayFlagsOpaqueNV, 0xFF, 0, 0, 0 /* missIndex */, origin, tmin, gl_WorldRayDirectionNV, tmax, 0 /* payload location */);
+            traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0 /* missIndex */, origin, tmin, gl_WorldRayDirectionEXT, tmax, 0 /* payload location */);
             payload.recDepth--;
 
             if(payload.depth < 1000) {
@@ -138,10 +138,10 @@ void main()
             }
             else {
                 float eta = mat.ior / 1.0;
-                vec3 dir = refract(gl_WorldRayDirectionNV, vnInWorldSpace, eta);
+                vec3 dir = refract(gl_WorldRayDirectionEXT, vnInWorldSpace, eta);
                 float dot_product = pow(dot(ubo.lightDir, dir), 5) + 0.75;
                 shadowCol *= dot_product;
-                traceNV(topLevelAS, gl_RayFlagsOpaqueNV, 0x0, 0, 0, 0 /* missIndex */, origin, tmin, -dir, tmax, 0 /* payload location */);
+                traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0x0, 0, 0, 0 /* missIndex */, origin, tmin, -dir, tmax, 0 /* payload location */);
                 payload.hitValue = shadowCol + .1 * payload.hitValue;
             }
         }
@@ -155,19 +155,19 @@ void main()
             if(payload.recDepth < ubo.maxRecursions) {
                 payload.rayType = RT_SHADOW_INTERNAL;
                 payload.recDepth++;
-                traceNV(topLevelAS, gl_RayFlagsOpaqueNV, 0xFF, 0, 0, 1 /* missIndex */, origin, tmin, gl_WorldRayDirectionNV, tmax, 0 /* payload location */);
+                traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 1 /* missIndex */, origin, tmin, gl_WorldRayDirectionEXT, tmax, 0 /* payload location */);
                 payload.recDepth--;
             }
         }
         else {
-            payload.hitValue *= mix(vec3(0.4), vec3(0.8), clamp(log(gl_HitTNV) / 8, 0, 1));
+            payload.hitValue *= mix(vec3(0.4), vec3(0.8), clamp(log(gl_HitTEXT) / 8, 0, 1));
         }
         return;
     }
 
     // Correctly handle backfacing triangle illumination
     // (not required if there are no double-sided triangles)
-    bool frontFacing = dot(-gl_WorldRayDirectionNV, vnInWorldSpace) > 0;
+    bool frontFacing = dot(-gl_WorldRayDirectionEXT, vnInWorldSpace) > 0;
     if(!frontFacing) vnInWorldSpace = normalize(-vnInWorldSpace);
 
     // Compute diffuse and specular lit color
@@ -177,7 +177,7 @@ void main()
     // if (dot(-ubo.lightDir, vnInWorldSpace) > 0.0) { // light source on the right side?
     //     const vec3 lightSpecular = vec3(1, 1, 1);         // TODO configurable?
     //     specularColor = lightSpecular * vec3(mat.specular) *
-    //                     pow(max(0.0, dot(reflect(ubo.lightDir, vnInWorldSpace), normalize(-gl_WorldRayDirectionNV))),
+    //                     pow(max(0.0, dot(reflect(ubo.lightDir, vnInWorldSpace), normalize(-gl_WorldRayDirectionEXT))),
     //                         mat.reflectivity*100);
     // }
     // baseColor += specularColor;
@@ -190,7 +190,7 @@ void main()
             payload.hitValue = vec3(1.0);
             payload.rayType = RT_SHADOW_TRACE;
             payload.recDepth++;
-            traceNV(topLevelAS, gl_RayFlagsOpaqueNV, 0xFF, 0 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 1 /* missIndex */, origin, tmin * 10,
+            traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 1 /* missIndex */, origin, tmin * 10,
                     -ubo.lightDir, tmax, 0 /* payload location */);
             payload.recDepth--;
             shadowColor = payload.hitValue;
@@ -208,11 +208,11 @@ void main()
     float reflectDepth = 0.f;
     if(payload.recDepth < ubo.maxRecursions && mat.reflectivity > 0.f) {
 
-        vec3 dir = reflect(gl_WorldRayDirectionNV, vnInWorldSpace);
+        vec3 dir = reflect(gl_WorldRayDirectionEXT, vnInWorldSpace);
 
         payload.recDepth += int(mat.rayConsumption);
-        payload.refDepth += gl_HitTNV;
-        traceNV(topLevelAS, gl_RayFlagsOpaqueNV, 0xff, 0 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 0 /* missIndex */, origin, tmin, dir, tmax,
+        payload.refDepth += gl_HitTEXT;
+        traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xff, 0 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 0 /* missIndex */, origin, tmin, dir, tmax,
                 0 /* payload location */);
         payload.recDepth -= int(mat.rayConsumption);
 
@@ -225,11 +225,11 @@ void main()
     if(payload.recDepth < ubo.maxRecursions && mat.transparency > 0.f) {
         if(frontFacing) {
             float eta = payload.curIOR / mat.ior;
-            vec3 dir = refract(gl_WorldRayDirectionNV, vnInWorldSpace, eta);
+            vec3 dir = refract(gl_WorldRayDirectionEXT, vnInWorldSpace, eta);
 
             payload.recDepth++;
             payload.curIOR = mat.ior;
-            traceNV(topLevelAS, gl_RayFlagsOpaqueNV, 0xff, 0 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 0 /* missIndex */, origin, tmin, dir, tmax,
+            traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xff, 0 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 0 /* missIndex */, origin, tmin, dir, tmax,
                     0 /* payload location */);
             payload.recDepth--;
 
@@ -237,15 +237,15 @@ void main()
         }
         else {
             float eta = mat.ior / 1.0;
-            vec3 dir = refract(gl_WorldRayDirectionNV, vnInWorldSpace, eta);
+            vec3 dir = refract(gl_WorldRayDirectionEXT, vnInWorldSpace, eta);
 
             payload.recDepth++;
             payload.curIOR = 1.0;
-            traceNV(topLevelAS, gl_RayFlagsOpaqueNV, 0xff, 0 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 0 /* missIndex */, origin, tmin, dir, tmax,
+            traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xff, 0 /* sbtRecordOffset */, 0 /* sbtRecordStride */, 0 /* missIndex */, origin, tmin, dir, tmax,
                     0 /* payload location */);
             payload.recDepth--;
 
-            vec3 transmittanceModulation = mix(vec3(1, 1, 1), mat.diffuse, log(1 + gl_HitTNV));
+            vec3 transmittanceModulation = mix(vec3(1, 1, 1), mat.diffuse, log(1 + gl_HitTEXT));
             refractColor = transmittanceModulation * payload.hitValue;
         }
     }
@@ -264,5 +264,5 @@ void main()
         payload.reflectContribution = totalContrib;
     }
 
-    payload.depth = gl_HitTNV;
+    payload.depth = gl_HitTEXT;
 }
