@@ -1,7 +1,7 @@
 {
   "recommendations": [
-    "cadenas.vscode-glsllint",
     "editorconfig.editorconfig",
+    "majicdave.vscode-shaderc",
     "slevesque.shader",
     "xaver.clang-format"
   ],
