@@ -73,8 +73,14 @@ file(GLOB_RECURSE shaders
     resources/shaders/*.rmiss
     resources/shaders/*.rcall
 )
+
+file(GLOB_RECURSE shader_dependencies
+    resources/shaders/*.h
+    resources/shaders/*.def
+)
+
 foreach(shader IN LISTS shaders)
-    raygun_add_shader(raygun ${shader})
+    raygun_add_shader(raygun ${shader} "${shader_dependencies}")
 endforeach(shader)
 
 raygun_add_compile_flags(raygun)

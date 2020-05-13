@@ -1,4 +1,4 @@
-function(raygun_add_shader target shader)
+function(raygun_add_shader target shader dependencies)
     find_program(GLSLC glslc)
     if(NOT GLSLC)
         message(FATAL_ERROR "glslc not found")
@@ -8,7 +8,7 @@ function(raygun_add_shader target shader)
         OUTPUT ${shader}.spv
         COMMAND ${GLSLC} -o ${shader}.spv ${shader}
         MAIN_DEPENDENCY ${shader}
-        IMPLICIT_DEPENDS CXX ${shader}
+        DEPENDS ${dependencies}
     )
 
     set_source_files_properties(${shader}.spv PROPERTIES GENERATED TRUE)
