@@ -198,7 +198,7 @@ Profiler& Raygun::profiler()
 
 compute::ComputeSystem& Raygun::computeSystem()
 {
-    if(!m_vc) {
+    if(!m_computeSystem) {
         RAYGUN_FATAL("Compute system not set");
     }
 
