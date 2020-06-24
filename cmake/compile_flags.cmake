@@ -4,9 +4,10 @@ function(raygun_add_compile_flags target)
         # with the same memory layout.
         target_compile_options(${target} PUBLIC -fno-strict-aliasing)
     elseif(MSVC)
-        target_compile_options(${target} PUBLIC /Zi)
+        target_compile_options(${target} PUBLIC /Zi /MP)
 
         target_link_options(${target} PUBLIC
+            /LTCG
             /DEBUG
             /NODEFAULTLIB:libcmt.lib
             /ignore:4075 # ignoring /INCREMENTAL due to /LTCG
