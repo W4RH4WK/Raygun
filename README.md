@@ -68,7 +68,7 @@ Debugging and profiling information is displayed via [ImGui].
 ## Development Notes
 
 - Shaders are automatically compiled at build-time
-- Use Vulkan SDK `1.2.135`
+- Use Vulkan SDK `1.2.141`
 - For generating fonts using the provided script, `blender.exe` should be in `PATH`
 - A Blender plugin is provided to enable instant scene export
 

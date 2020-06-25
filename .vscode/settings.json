@@ -4,5 +4,6 @@
   },
   "[cpp]": {
     "editor.defaultFormatter": "xaver.clang-format"
-  }
+  },
+  "shaderc-lint.glslcArgs": "--target-env=vulkan1.2"
 }

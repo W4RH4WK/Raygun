@@ -6,7 +6,7 @@ function(raygun_add_shader target shader dependencies)
 
     add_custom_command(
         OUTPUT ${shader}.spv
-        COMMAND ${GLSLC} -o ${shader}.spv ${shader}
+        COMMAND ${GLSLC} --target-env=vulkan1.2 -o ${shader}.spv ${shader}
         MAIN_DEPENDENCY ${shader}
         DEPENDS ${dependencies}
     )
