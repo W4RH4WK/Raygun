@@ -244,6 +244,10 @@ void VulkanContext::setupDevice()
     vk::PhysicalDeviceBufferDeviceAddressFeatures addressFeatures;
     addressFeatures.setBufferDeviceAddress(true);
 
+    vk::PhysicalDeviceRayTracingFeaturesKHR raytracingFeatures;
+    raytracingFeatures.setRayTracing(true);
+    raytracingFeatures.setPNext(&addressFeatures);
+
     vk::PhysicalDeviceFeatures feat;
     feat.setRobustBufferAccess(true);
 
@@ -252,7 +256,7 @@ void VulkanContext::setupDevice()
     info.setPQueueCreateInfos(queueInfos.data());
     info.setEnabledExtensionCount((uint32_t)extensions.size());
     info.setPpEnabledExtensionNames(extensions.data());
-    info.setPNext(&addressFeatures);
+    info.setPNext(&raytracingFeatures);
     info.setPEnabledFeatures(&feat);
 
     device = physicalDevice.createDeviceUnique(info);
