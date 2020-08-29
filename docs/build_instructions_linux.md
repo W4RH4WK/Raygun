@@ -1,8 +1,8 @@
 # Linux Build Instructions
 
-1. Compile [PhysX](https://github.com/NVIDIAGameWorks/PhysX) with runtime type information.
+1. Compile [this fork of PhysX](https://github.com/W4RH4WK/PhysX).
 
-   After downloading PhysX, remove the `-fno-rtti` flag from the compiler flags in `physx/source/compiler/cmake/linux/CMakeLists.txt`.
+   It's essentially vanilla PhysX with runtime type information enabled and some minor fixes to make it compile on recent systems.
    Follow the official build instructions.
    Note that there are dedicated build folders for *release* and *debug*.
    You don't need to install PhysX, we'll use it directly from the build directory.
