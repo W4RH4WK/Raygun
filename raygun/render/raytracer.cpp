@@ -271,7 +271,7 @@ namespace {
 
 void Raytracer::setupRaytracingPipeline()
 {
-    const auto sbtStride = m_properties.shaderGroupHandleSize;
+    const auto sbtStride = m_properties.shaderGroupBaseAlignment;
 
     std::vector<vk::PipelineShaderStageCreateInfo> stages;
     std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups;
@@ -307,10 +307,12 @@ void Raytracer::setupRaytracingPipeline()
         groups.push_back(closestHitShaderGroupInfo((uint32_t)groups.size()));
     }
 
-    m_raygenSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
-    m_missSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
-    m_hitSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
-    m_callableSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
+    const auto sbtSize = groups.size() * sbtStride;
+
+    m_raygenSbt.setStride(sbtStride).setSize(sbtSize);
+    m_missSbt.setStride(sbtStride).setSize(sbtSize);
+    m_hitSbt.setStride(sbtStride).setSize(sbtSize);
+    m_callableSbt.setStride(sbtStride).setSize(sbtSize);
 
     {
         vk::PipelineLayoutCreateInfo info = {};
@@ -352,12 +354,26 @@ void Raytracer::setupShaderBindingTable()
     const auto sbtSize = m_raygenSbt.size;
     const auto groupCount = (uint32_t)(m_raygenSbt.size / m_raygenSbt.stride);
 
+    std::vector<uint8_t> groupHandles(groupCount * m_properties.shaderGroupHandleSize);
+    vc.device->getRayTracingShaderGroupHandlesKHR(*m_pipeline, 0, groupCount, groupHandles.size(), groupHandles.data());
+
     m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingKHR, vk::MemoryPropertyFlagBits::eHostVisible);
     m_sbtBuffer->setName("Shader Binding Table");
 
-    vc.device->getRayTracingShaderGroupHandlesKHR(*m_pipeline, 0, groupCount, sbtSize, m_sbtBuffer->map());
+    // Shader group handles should be aligned according to
+    // shaderGroupBaseAlignment. The handles we get from
+    // getRayTracingShaderGroupHandlesKHR are consecutive in memory
+    // (shaderGroupHandleSize), hence we need to copy them over adjusting the
+    // alignment.
+    {
+        auto p = reinterpret_cast<uint8_t*>(m_sbtBuffer->map());
+        for(auto i = 0u; i < groupCount; i++) {
+            memcpy(p, groupHandles.data() + i * m_properties.shaderGroupHandleSize, m_properties.shaderGroupHandleSize);
+            p += m_properties.shaderGroupBaseAlignment;
+        }
 
-    m_sbtBuffer->unmap();
+        m_sbtBuffer->unmap();
+    }
 
     m_raygenSbt.setBuffer(*m_sbtBuffer);
     m_missSbt.setBuffer(*m_sbtBuffer);
