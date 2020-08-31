@@ -413,6 +413,7 @@ void RenderSystem::setupRenderPass()
     dependencies[0].setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
     dependencies[0].setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
     dependencies[0].setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite);
+    dependencies[0].setDependencyFlags(vk::DependencyFlagBits::eByRegion);
 
     vk::RenderPassCreateInfo info = {};
     info.setAttachmentCount((uint32_t)attachments.size());
