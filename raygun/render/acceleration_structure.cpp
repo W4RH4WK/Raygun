@@ -206,6 +206,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
         geometryTypeInfo.setMaxPrimitiveCount((uint32_t)mesh.numFaces());
         geometryTypeInfo.setIndexType(vk::IndexType::eUint32);
         geometryTypeInfo.setMaxVertexCount((uint32_t)mesh.vertices.size());
+        geometryTypeInfo.setVertexFormat(vk::Format::eR32G32B32Sfloat);
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
