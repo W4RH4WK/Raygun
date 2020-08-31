@@ -332,19 +332,7 @@ void Raytracer::setupRaytracingPipeline()
         info.setMaxRecursionDepth(7);
         info.setLayout(*m_pipelineLayout);
 
-        // FIXME: Vulkan SDK >= 1.2.136
-        // https://github.com/KhronosGroup/Vulkan-Hpp/issues/557
-        {
-            const auto vkCreateRayTracingPipelinesKHR =
-                reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vc.device->getProcAddr("vkCreateRayTracingPipelinesKHR"));
-            RAYGUN_ASSERT(vkCreateRayTracingPipelinesKHR);
-
-            VkPipeline pipeline;
-            const auto result = vkCreateRayTracingPipelinesKHR(*vc.device, nullptr, 1, &VkRayTracingPipelineCreateInfoKHR(info), nullptr, &pipeline);
-            RAYGUN_ASSERT(result == VK_SUCCESS);
-
-            m_pipeline = gpu::wrapUnique<vk::Pipeline>(pipeline, *vc.device);
-        }
+        m_pipeline = vc.device->createRayTracingPipelineKHRUnique(nullptr, info);
         vc.setObjectName(*m_pipeline, "Ray Tracer");
     }
 }
