@@ -45,7 +45,7 @@ class TopLevelAS {
     vk::WriteDescriptorSetAccelerationStructureKHR m_descriptorInfo = {};
 
     vk::UniqueAccelerationStructureKHR m_structure;
-    vk::UniqueDeviceMemory m_memory;
+    gpu::UniqueBuffer m_structureMemory;
     gpu::UniqueBuffer m_instances;
     gpu::UniqueBuffer m_scratch;
 
@@ -66,7 +66,7 @@ class BottomLevelAS {
 
   private:
     vk::UniqueAccelerationStructureKHR m_structure;
-    vk::UniqueDeviceMemory m_memory;
+    gpu::UniqueBuffer m_structureMemory;
     gpu::UniqueBuffer m_scratch;
 };
 

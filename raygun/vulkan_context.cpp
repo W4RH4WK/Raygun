@@ -217,7 +217,8 @@ void VulkanContext::setupDevice()
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 
         // Ray Tracing
-        VK_KHR_RAY_TRACING_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
     };
@@ -244,12 +245,16 @@ void VulkanContext::setupDevice()
     vk::PhysicalDeviceBufferDeviceAddressFeatures addressFeatures;
     addressFeatures.setBufferDeviceAddress(true);
 
-    vk::PhysicalDeviceRayTracingFeaturesKHR raytracingFeatures;
-    raytracingFeatures.setRayTracing(true);
-    raytracingFeatures.setPNext(&addressFeatures);
+    vk::PhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures;
+    accelerationStructureFeatures.setAccelerationStructure(true);
+    accelerationStructureFeatures.setPNext(&addressFeatures);
 
-    vk::PhysicalDeviceFeatures feat;
-    feat.setRobustBufferAccess(true);
+    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracingFeatures;
+    raytracingFeatures.setRayTracingPipeline(true);
+    raytracingFeatures.setPNext(&accelerationStructureFeatures);
+
+    vk::PhysicalDeviceFeatures features;
+    features.setRobustBufferAccess(true);
 
     vk::DeviceCreateInfo info;
     info.setQueueCreateInfoCount((uint32_t)queueInfos.size());
@@ -257,7 +262,7 @@ void VulkanContext::setupDevice()
     info.setEnabledExtensionCount((uint32_t)extensions.size());
     info.setPpEnabledExtensionNames(extensions.data());
     info.setPNext(&raytracingFeatures);
-    info.setPEnabledFeatures(&feat);
+    info.setPEnabledFeatures(&features);
 
     device = physicalDevice.createDeviceUnique(info);
 }

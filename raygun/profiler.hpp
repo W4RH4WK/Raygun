@@ -50,7 +50,7 @@ class Profiler {
     void doUI() const;
 
   private:
-    static constexpr uint32_t QUERY_BUFFER_FRAMES = 2;
+    static constexpr uint32_t QUERY_BUFFER_FRAMES = 8;
     static constexpr uint32_t MAX_TIMESTAMP_QUERIES = (uint32_t)TimestampQueryID::Count;
     static constexpr uint32_t STATISTIC_FRAMES = 500;
 

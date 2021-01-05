@@ -4,7 +4,7 @@
 
    Add CMake to the path of the current user.
 
-2. Install the [Vulkan-SDK](https://www.lunarg.com/vulkan-sdk/) in version `1.2.148`.
+2. Install the [Vulkan-SDK](https://www.lunarg.com/vulkan-sdk/) in version `1.2.162`.
 
 3. Generate the Visual Studio Solution:
 

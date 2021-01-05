@@ -7,7 +7,7 @@
    Note that there are dedicated build folders for *release* and *debug*.
    You don't need to install PhysX, we'll use it directly from the build directory.
 
-2. Install the [Vulkan-SDK](https://www.lunarg.com/vulkan-sdk/) in version `1.2.148`.
+2. Install the [Vulkan-SDK](https://www.lunarg.com/vulkan-sdk/) in version `1.2.162`.
 
 3. Run the following command to install the remaining dependencies.
    Adjust package manager and package names accordingly if you are not using Ubuntu.

@@ -71,8 +71,16 @@ void Profiler::startFrame()
     }
 
     // Get GPU times from device
-    vc.device->getQueryPoolResults(*timestampQueryPool, prevQueryFrame() * MAX_TIMESTAMP_QUERIES, MAX_TIMESTAMP_QUERIES,
-                                   vk::ArrayProxy<size_t>(timestampQueryResults), sizeof(uint64_t), vk::QueryResultFlagBits::e64);
+    {
+        const auto result =
+            vc.device->getQueryPoolResults(*timestampQueryPool, prevQueryFrame() * MAX_TIMESTAMP_QUERIES, MAX_TIMESTAMP_QUERIES, timestampQueryResults.size(),
+                                           timestampQueryResults.data(), sizeof(uint64_t), vk::QueryResultFlagBits::e64);
+
+        if(result != vk::Result::eSuccess && result != vk::Result::eNotReady) {
+            RAYGUN_INFO("Unable to get query pool results");
+            return;
+        }
+    }
 
     // Transform GPU times from from ticks (plus some potential invalid bits) to valid time units
     std::transform(timestampQueryResults.cbegin(), timestampQueryResults.cend(), timestampQueryResults.begin(), [&](uint64_t ts) {

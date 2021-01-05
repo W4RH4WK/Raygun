@@ -52,8 +52,6 @@ struct Raytracer {
 
     void setupRaytracingPipeline();
 
-    void setupShaderBindingTable();
-
     void setupPostprocessing();
 
     const gpu::Image& selectResultImage();
@@ -63,16 +61,16 @@ struct Raytracer {
     void computeShaderImageBarrier(vk::CommandBuffer& cmd, std::initializer_list<gpu::Image*> images,
                                    vk::PipelineStageFlags srcStageMask = vk::PipelineStageFlagBits::eComputeShader);
 
-    vk::PhysicalDeviceRayTracingPropertiesKHR m_properties = {};
+    vk::PhysicalDeviceRayTracingPipelinePropertiesKHR m_properties = {};
 
     UniqueTopLevelAS m_topLevelAS;
 
     gpu::DescriptorSet m_descriptorSet;
 
-    vk::StridedBufferRegionKHR m_raygenSbt;
-    vk::StridedBufferRegionKHR m_missSbt;
-    vk::StridedBufferRegionKHR m_hitSbt;
-    vk::StridedBufferRegionKHR m_callableSbt;
+    vk::StridedDeviceAddressRegionKHR m_raygenSbt = {};
+    vk::StridedDeviceAddressRegionKHR m_missSbt = {};
+    vk::StridedDeviceAddressRegionKHR m_hitSbt = {};
+    vk::StridedDeviceAddressRegionKHR m_callableSbt = {};
 
     vk::UniquePipeline m_pipeline;
     vk::UniquePipelineLayout m_pipelineLayout;

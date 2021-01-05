@@ -200,13 +200,15 @@ void RenderSystem::setupModelBuffers()
 
     m_vertexBuffer = std::make_unique<gpu::Buffer>(vertexCount * sizeof(Vertex),
                                                    vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer
-                                                       | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                                       | vk::BufferUsageFlagBits::eShaderDeviceAddress
+                                                       | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR,
                                                    vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     m_vertexBuffer->setName("Vertex Buffer");
 
     m_indexBuffer = std::make_unique<gpu::Buffer>(indexCount * sizeof(uint32_t),
                                                   vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eStorageBuffer
-                                                      | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                                      | vk::BufferUsageFlagBits::eShaderDeviceAddress
+                                                      | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR,
                                                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     m_indexBuffer->setName("Index Buffer");
 
@@ -383,7 +385,7 @@ void RenderSystem::presentFrame()
     presentInfo.setPImageIndices(&m_framebufferIndex);
 
     try {
-        vc.presentQueue->queue().presentKHR(presentInfo);
+        (void)vc.presentQueue->queue().presentKHR(presentInfo);
     }
     catch(const vk::OutOfDateKHRError&) {
         RAYGUN_DEBUG("Swap chain out of date");

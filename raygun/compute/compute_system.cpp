@@ -47,7 +47,7 @@ ComputePass::ComputePass(string_view name) : computeShader(RG().resourceManager(
     pipeInfo.setLayout(*cs.computePipelineLayout);
     pipeInfo.setStage(shaderStageInfo);
 
-    computePipeline = cs.vc.device->createComputePipelineUnique(nullptr, pipeInfo);
+    computePipeline = cs.vc.device->createComputePipelineUnique(nullptr, pipeInfo).value;
     RG().vc().setObjectName(*computePipeline, name);
 
     RAYGUN_TRACE("Compute pass {} initialized", name);
