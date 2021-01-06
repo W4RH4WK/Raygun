@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0 Cross-Vendor Ray Tracing
+
+The ray tracer has been migrated to the, now standardized, Vulkan ray tracing extension.
+This enables Raygun to also work on non-Nvidia hardware, given Vulkan ray tracing is supported.
+
+- Rewrite shader binding table creation.
+- Fix a copy-paste error in Raygun::computeSystem.
+- Fix build system dependencies between shader and header files.
+- Add video demo link to README.
+- Re-enable multi processor compilication and LTC for Windows builds.
+- Use PhysX fork for better out-of-the-box experience.
+- Update Vulkan SDK to 1.2.162.
+- Upgrade fmt to 6.1.2.
+
 ## 1.2.0 Render System Cleanup
 
 - Remove experimental headless mode
