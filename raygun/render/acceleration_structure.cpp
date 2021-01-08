@@ -42,7 +42,7 @@ namespace {
 
         // 3x4 row-major affine transformation matrix.
         const auto transform = glm::transpose(entity.globalTransform().toMat4());
-        memcpy(&instance.transform, &transform, sizeof(instance.transform));
+        instance.transform.matrix = *reinterpret_cast<const vk::ArrayWrapper2D<float, 3, 4>*>(&transform);
 
         const auto blasAddress = device.getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*entity.model->bottomLevelAS)});
         instance.setAccelerationStructureReference(blasAddress);
