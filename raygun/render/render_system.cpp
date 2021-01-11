@@ -158,7 +158,7 @@ void RenderSystem::render(Scene& scene)
 
     presentFrame();
 
-    vc.waitIdle();
+    // vc.waitIdle();
 }
 
 namespace {
