@@ -133,44 +133,4 @@ class Entity {
     std::vector<std::shared_ptr<Entity>> m_children;
 };
 
-class EntityAnimation {
-  public:
-    virtual ~EntityAnimation() {}
-    bool update(double deltaTime, Entity& target);
-
-  protected:
-    virtual bool runAnimation(Entity& target) = 0;
-    double m_animationTime = 0;
-};
-
-class ScaleAnimation : public EntityAnimation {
-  public:
-    ScaleAnimation(double duration, vec3 startScale, vec3 endScale);
-
-  protected:
-    bool runAnimation(Entity& target) override;
-
-  private:
-    double m_duration;
-    vec3 m_startScale, m_endScale;
-};
-
-class AnimatableEntity : public Entity {
-  public:
-    explicit AnimatableEntity(string_view name) : Entity(name) {}
-    virtual void update(double deltaTime);
-
-    template<typename T, std::enable_if_t<std::is_base_of_v<EntityAnimation, T>, int> = 0>
-    void setAnimation(const T& animation)
-    {
-        m_animation = std::make_unique<T>(animation);
-    }
-
-    void setAnimationFinisher(const std::function<void()>& f) { m_animationFinisher = f; }
-
-  protected:
-    std::unique_ptr<EntityAnimation> m_animation;
-    std::optional<std::function<void()>> m_animationFinisher;
-};
-
 } // namespace raygun

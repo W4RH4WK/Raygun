@@ -32,7 +32,7 @@ void AnimationSystem::update(double timeDelta)
 
     scene.root->forEachEntity([&](Entity& entity) {
         if(entity.animator) {
-            entity.setTransform(entity.animator->animate(timeDelta));
+            entity.setTransform(entity.animator->animate(timeDelta, entity.transform()));
         }
     });
 }

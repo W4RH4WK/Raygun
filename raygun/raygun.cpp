@@ -113,7 +113,6 @@ void Raygun::loop()
 
         m_scene->preSimulation();
 
-        m_animationSystem->update(timeDelta);
 
         m_physicsSystem->update(timeDelta);
 
@@ -121,11 +120,7 @@ void Raygun::loop()
             m_scene->processInput(input, timeDelta);
         }
 
-        m_scene->root->forEachEntity([timeDelta](auto& ent) {
-            if(auto animEnt = dynamic_cast<AnimatableEntity*>(&ent)) {
-                animEnt->update(timeDelta);
-            }
-        });
+        m_animationSystem->update(timeDelta);
 
         m_scene->update(timeDelta);
 

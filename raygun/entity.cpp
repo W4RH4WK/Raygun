@@ -281,42 +281,4 @@ void Entity::updatePhysicsTransform()
     }
 }
 
-bool EntityAnimation::update(double deltaTime, Entity& target)
-{
-    m_animationTime += deltaTime;
-    return runAnimation(target);
-}
-
-ScaleAnimation::ScaleAnimation(double duration, vec3 startScale, vec3 endScale)
-    : EntityAnimation()
-    , m_duration(duration)
-    , m_startScale(startScale)
-    , m_endScale(endScale)
-{
-}
-
-bool ScaleAnimation::runAnimation(Entity& target)
-{
-    auto t = m_animationTime / m_duration;
-    auto factor = std::clamp(t, 0., 1.);
-
-    auto transform = target.transform();
-    transform.scaling = glm::mix(m_startScale, m_endScale, factor);
-    target.setTransform(transform);
-
-    return t <= 1.;
-}
-
-void AnimatableEntity::update(double deltaTime)
-{
-    if(m_animation) {
-        auto ret = m_animation->update(deltaTime, *this);
-        if(!ret) {
-            m_animation.reset();
-            if(m_animationFinisher) (*m_animationFinisher)();
-            m_animationFinisher.reset();
-        }
-    }
-}
-
 } // namespace raygun

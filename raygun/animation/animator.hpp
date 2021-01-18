@@ -29,7 +29,7 @@ namespace raygun::animation {
 /// Animator component in charge of managing an entity's transform animation.
 class TransformAnimator {
   public:
-    Transform animate(double timeDelta);
+    Transform animate(double timeDelta = 0.0, Transform transform = {});
 
     bool done() const { return !animation || m_elapsed > animation->duration(); }
 

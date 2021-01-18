@@ -76,7 +76,7 @@ class Factory {
     mutable Entity* currentContainer = nullptr;
 };
 
-class Window : public AnimatableEntity {
+class Window : public Entity {
     friend class Factory;
 
   public:

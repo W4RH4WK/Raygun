@@ -30,10 +30,31 @@ namespace raygun::animation {
 /// modifies an entity's transform.
 class ITransformAnimation {
   public:
-    virtual Transform evaluate(double timestamp) = 0;
+    virtual Transform evaluate(double timestamp, Transform transform = {}) const = 0;
     virtual double duration() const = 0;
     virtual bool loops() const = 0;
     virtual ~ITransformAnimation() {}
+};
+
+class ScaleAnimation : public ITransformAnimation {
+  public:
+    ScaleAnimation(vec3 start, vec3 end, double duration, bool loops = false) : m_start(start), m_end(end), m_duration(duration), m_loops(loops) {}
+
+    Transform evaluate(double timestamp, Transform transform = {}) const override
+    {
+        const auto factor = std::clamp(timestamp / m_duration, 0.0, 1.0);
+        transform.scaling = glm::mix(m_start, m_end, factor);
+        return transform;
+    }
+
+    double duration() const override { return m_duration; }
+
+    bool loops() const override { return m_loops; }
+
+  private:
+    vec3 m_start, m_end;
+    double m_duration;
+    bool m_loops;
 };
 
 } // namespace raygun::animation

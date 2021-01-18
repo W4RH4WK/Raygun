@@ -22,6 +22,8 @@
 
 #include "ui.hpp"
 
+#include "raygun/animation/animation.hpp"
+#include "raygun/animation/animator.hpp"
 #include "raygun/raygun.hpp"
 #include "raygun/resource_manager.hpp"
 #include "raygun/utils/array_utils.hpp"
@@ -226,7 +228,7 @@ void Factory::applyOffset(vec2 offset)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////// Window
 
-Window::Window(const Factory& factory, string_view name, string_view title, float headerScale, bool includeDecorations) : AnimatableEntity(name), title(title)
+Window::Window(const Factory& factory, string_view name, string_view title, float headerScale, bool includeDecorations) : Entity(name), title(title)
 {
     std::shared_ptr<Entity> wnd = std::make_shared<Entity>(string(name) + "_wnd");
     wnd->model = factory.getModel(mesh_names::WND);
@@ -677,7 +679,8 @@ std::shared_ptr<Window> uiTestWindow(Factory& factory)
     });
 
     wnd->doLayout();
-    wnd->setAnimation(ScaleAnimation(0.25, vec3(1, 0, 1), vec3(1)));
+    wnd->animator = std::make_unique<animation::TransformAnimator>();
+    wnd->animator->animation = std::make_shared<animation::ScaleAnimation>(vec3(1, 0, 1), vec3(1), 0.25);
     wnd->moveTo(vec3(0, 0, -2.5));
 
     return wnd;
