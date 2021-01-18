@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "raygun/animation/animation_system.hpp"
 #include "raygun/audio/audio_system.hpp"
 #include "raygun/compute/compute_system.hpp"
 #include "raygun/config.hpp"
@@ -69,6 +70,8 @@ class Raygun {
 
     render::RenderSystem& renderSystem();
 
+    animation::AnimationSystem& animationSystem();
+
     physics::PhysicsSystem& physicsSystem();
 
     audio::AudioSystem& audioSystem();
@@ -99,6 +102,8 @@ class Raygun {
     compute::UniqueComputeSystem m_computeSystem;
 
     render::UniqueRenderSystem m_renderSystem;
+
+    animation::UniqueAnimationSystem m_animationSystem;
 
     physics::UniquePhysicsSystem m_physicsSystem;
 

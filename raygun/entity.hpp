@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "raygun/animation/animator.hpp"
 #include "raygun/audio/audio_source.hpp"
 #include "raygun/physics/physics_utils.hpp"
 #include "raygun/render/model.hpp"
@@ -105,6 +106,8 @@ class Entity {
     physics::UniqueActor physicsActor;
 
     audio::UniqueSource audioSource;
+
+    animation::UniqueTransformAnimator animator;
 
   private:
     void setParent(const Entity* parent);

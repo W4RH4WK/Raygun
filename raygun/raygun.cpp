@@ -113,6 +113,8 @@ void Raygun::loop()
 
         m_scene->preSimulation();
 
+        m_animationSystem->update(timeDelta);
+
         m_physicsSystem->update(timeDelta);
 
         if(!ui::runUI(*m_scene->root, timeDelta, input)) {
@@ -212,6 +214,15 @@ render::RenderSystem& Raygun::renderSystem()
     }
 
     return *m_renderSystem;
+}
+
+animation::AnimationSystem& Raygun::animationSystem()
+{
+    if(!m_animationSystem) {
+        RAYGUN_FATAL("Animation system not set");
+    }
+
+    return *m_animationSystem;
 }
 
 physics::PhysicsSystem& Raygun::physicsSystem()
