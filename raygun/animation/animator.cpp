@@ -27,7 +27,7 @@ namespace raygun::animation {
 Transform TransformAnimator::animate(double timeDelta, Transform transform)
 {
     if(!animation) {
-        return {};
+        return transform;
     }
 
     m_elapsed += timeDelta;
