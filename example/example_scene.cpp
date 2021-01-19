@@ -75,7 +75,7 @@ void ExampleScene::showMenu()
     m_menu->doLayout();
     m_menu->move(vec3{0.0f, 0.0f, -4.0f});
     m_menu->animator = std::make_unique<animation::TransformAnimator>();
-    m_menu->animator->animation = std::make_shared<animation::ScaleAnimation>(vec3(1, 0, 1), vec3(1), 0.25);
+    m_menu->animator->animation = animation::scaleAnimation(vec3(1, 0, 1), vec3(1), 0.25);
 
     camera->addChild(m_menu);
 

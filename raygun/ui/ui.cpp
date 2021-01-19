@@ -680,7 +680,7 @@ std::shared_ptr<Window> uiTestWindow(Factory& factory)
 
     wnd->doLayout();
     wnd->animator = std::make_unique<animation::TransformAnimator>();
-    wnd->animator->animation = std::make_shared<animation::ScaleAnimation>(vec3(1, 0, 1), vec3(1), 0.25);
+    wnd->animator->animation = animation::scaleAnimation(vec3(1, 0, 1), vec3(1), 0.25);
     wnd->moveTo(vec3(0, 0, -2.5));
 
     return wnd;

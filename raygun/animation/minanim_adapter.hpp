@@ -22,22 +22,42 @@
 
 #pragma once
 
-#include "raygun/transform.hpp"
+#include "raygun/animation/animation.hpp"
+#include "raygun/utils/minanim.hpp"
 
 namespace raygun::animation {
 
-/// This interfaces specifics the requirements of an animation clip that
-/// modifies an entity's transform.
-class ITransformAnimation {
+/// This adapter connects the generic MinAnim utility with Raygun's animation
+/// system.
+class MinAnimTransformAnimation : public ITransformAnimation {
   public:
-    virtual Transform evaluate(double timestamp, Transform transform = {}) const = 0;
-    virtual double duration() const = 0;
-    virtual bool loops() const = 0;
-    virtual ~ITransformAnimation() {}
-};
+    MinAnimTransformAnimation(std::function<utils::minanim::MinAnim(Transform&)> constructor, bool loops = false)
+        : m_animation(constructor(m_transform))
+        , m_loops(loops)
+    {
+    }
 
-/// Creates a simple animation interpolating the Transform's scale from start to
-/// end.
-std::shared_ptr<ITransformAnimation> scaleAnimation(vec3 start, vec3 end, double duration, bool loops = false);
+    Transform evaluate(double timestamp, Transform transform = {}) const override
+    {
+        m_transform = transform;
+        m_animation.evaluate(timestamp);
+        return m_transform;
+    }
+
+    double duration() const override { return m_animation.duration; }
+
+    bool loops() const override { return m_loops; }
+
+  private:
+    // MinAnim does not keep internal state, it stores references to the data it
+    // mutates. This Transform is the data that gets mutated by the MinAnim
+    // instance. While instances instances of this animation might be shared
+    // across multiple animators, this works fine as long as they are not
+    // evaluated in parallel. This is therefore *not* thread-safe.
+    mutable Transform m_transform;
+
+    utils::minanim::MinAnim m_animation;
+    bool m_loops;
+};
 
 } // namespace raygun::animation

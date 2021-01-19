@@ -20,24 +20,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#pragma once
+#include "raygun/animation/animation.hpp"
 
-#include "raygun/transform.hpp"
+#include "raygun/animation/minanim_adapter.hpp"
 
 namespace raygun::animation {
 
-/// This interfaces specifics the requirements of an animation clip that
-/// modifies an entity's transform.
-class ITransformAnimation {
-  public:
-    virtual Transform evaluate(double timestamp, Transform transform = {}) const = 0;
-    virtual double duration() const = 0;
-    virtual bool loops() const = 0;
-    virtual ~ITransformAnimation() {}
-};
-
-/// Creates a simple animation interpolating the Transform's scale from start to
-/// end.
-std::shared_ptr<ITransformAnimation> scaleAnimation(vec3 start, vec3 end, double duration, bool loops = false);
+std::shared_ptr<ITransformAnimation> scaleAnimation(vec3 start, vec3 end, double duration, bool loops)
+{
+    return std::make_shared<MinAnimTransformAnimation>(
+        [=](Transform& t) {
+            using namespace utils;
+            return minanim::set(t.scaling, start).seq(minanim::lerp(t.scaling, end, duration));
+        },
+        loops);
+}
 
 } // namespace raygun::animation
