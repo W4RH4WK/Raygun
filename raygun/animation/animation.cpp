@@ -28,12 +28,8 @@ namespace raygun::animation {
 
 std::shared_ptr<ITransformAnimation> scaleAnimation(vec3 start, vec3 end, double duration, bool loops)
 {
-    return std::make_shared<MinAnimTransformAnimation>(
-        [=](Transform& t) {
-            using namespace utils;
-            return minanim::set(t.scaling, start).seq(minanim::lerp(t.scaling, end, duration));
-        },
-        loops);
+    using A = utils::MinAnim<Transform>;
+    return std::make_shared<MinAnimTransformAnimation>(A::set(&Transform::scaling, start).seq(A::lerp(duration, &Transform::scaling, end)), loops);
 }
 
 } // namespace raygun::animation

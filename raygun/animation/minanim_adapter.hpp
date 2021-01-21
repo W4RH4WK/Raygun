@@ -31,17 +31,12 @@ namespace raygun::animation {
 /// system.
 class MinAnimTransformAnimation : public ITransformAnimation {
   public:
-    MinAnimTransformAnimation(std::function<utils::minanim::MinAnim(Transform&)> constructor, bool loops = false)
-        : m_animation(constructor(m_transform))
-        , m_loops(loops)
-    {
-    }
+    MinAnimTransformAnimation(utils::MinAnim<Transform> animation, bool loops = false) : m_animation(animation), m_loops(loops) {}
 
     Transform evaluate(double timestamp, Transform transform = {}) const override
     {
-        m_transform = transform;
-        m_animation.evaluate(timestamp);
-        return m_transform;
+        m_animation.evaluate(transform, timestamp);
+        return transform;
     }
 
     double duration() const override { return m_animation.duration; }
@@ -49,14 +44,7 @@ class MinAnimTransformAnimation : public ITransformAnimation {
     bool loops() const override { return m_loops; }
 
   private:
-    // MinAnim does not keep internal state, it stores references to the data it
-    // mutates. This Transform is the data that gets mutated by the MinAnim
-    // instance. While instances instances of this animation might be shared
-    // across multiple animators, this works fine as long as they are not
-    // evaluated in parallel. This is therefore *not* thread-safe.
-    mutable Transform m_transform;
-
-    utils::minanim::MinAnim m_animation;
+    utils::MinAnim<Transform> m_animation;
     bool m_loops;
 };
 
