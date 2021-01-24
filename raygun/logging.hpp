@@ -36,7 +36,7 @@
     do { \
         RAYGUN_CRITICAL(__VA_ARGS__); \
         RAYGUN_BREAK(); \
-        abort(); \
+        ::std::abort(); \
     } while(0)
 
 namespace raygun {
