@@ -36,3 +36,13 @@
         #define RAYGUN_BREAK() ::std::raise(SIGTRAP)
     #endif
 #endif
+
+#ifdef _WIN32
+    #ifdef RAYGUN_DLL_EXPORT
+        #define RAYGUN_DLL_API __declspec(dllexport)
+    #else
+        #define RAYGUN_DLL_API __declspec(dllimport)
+    #endif
+#else
+    #define RAYGUN_DLL_API
+#endif

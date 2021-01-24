@@ -41,6 +41,6 @@
 
 namespace raygun {
 
-extern std::shared_ptr<spdlog::logger> logger;
+extern RAYGUN_DLL_API std::shared_ptr<spdlog::logger> logger;
 
 } // namespace raygun

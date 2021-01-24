@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+- Allow Raygun to be built as shared library, see `docs/shared_library.md`.
+
 ## 1.3.0 Cross-Vendor Ray Tracing
 
 The ray tracer has been migrated to the, now standardized, Vulkan ray tracing extension.

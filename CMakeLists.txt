@@ -18,6 +18,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -60,6 +62,8 @@ target_link_libraries(raygun PUBLIC
     spdlog
 )
 
+target_compile_definitions(raygun PRIVATE RAYGUN_DLL_EXPORT)
+
 target_precompile_headers(raygun PUBLIC raygun/pch.hpp)
 
 file(GLOB_RECURSE shaders
@@ -86,6 +90,7 @@ endforeach(shader)
 raygun_add_compile_flags(raygun)
 raygun_enable_warnings(raygun)
 raygun_set_source_groups(raygun)
+#raygun_copy_dlls($<TARGET_FILE:raygun>)
 
 add_subdirectory(example)
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT example)
