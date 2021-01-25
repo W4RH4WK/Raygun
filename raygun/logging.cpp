@@ -27,28 +27,28 @@
 
 namespace raygun {
 
-std::shared_ptr<spdlog::logger> logger;
+std::shared_ptr<spdlog::logger> g_logger;
 
 // Static initialization of logging module.
 struct LoggerSetup {
     LoggerSetup()
     {
-        if(logger) {
+        if(g_logger) {
             // Logger already initialized.
             return;
         }
 
         const auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
-        logger = std::make_shared<spdlog::logger>(RAYGUN_NAME, consoleSink);
+        g_logger = std::make_shared<spdlog::logger>(RAYGUN_NAME, consoleSink);
 
-        logger->set_pattern("%T.%e %^%L%$ [%n] %v");
+        g_logger->set_pattern("%T.%e %^%L%$ [%n] %v");
 
 #ifdef NDEBUG
-        logger->flush_on(spdlog::level::warn);
+        g_logger->flush_on(spdlog::level::warn);
 #else
-        logger->set_level(spdlog::level::debug);
-        logger->flush_on(spdlog::level::debug);
+        g_logger->set_level(spdlog::level::debug);
+        g_logger->flush_on(spdlog::level::debug);
 #endif
 
         try {
@@ -56,13 +56,13 @@ struct LoggerSetup {
             fs::remove(logFile);
 
             const auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFile.string());
-            logger->sinks().push_back(fileSink);
+            g_logger->sinks().push_back(fileSink);
         }
         catch(const fs::filesystem_error& e) {
-            logger->warn("Unable to use log file: {}", e.what());
+            g_logger->warn("Unable to use log file: {}", e.what());
         }
 
-        logger->info("Running on " RAYGUN_NAME " " RAYGUN_VERSION);
+        g_logger->info("Running on " RAYGUN_NAME " " RAYGUN_VERSION);
     }
 } loggerSetup;
 

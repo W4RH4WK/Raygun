@@ -28,7 +28,7 @@ namespace raygun::physics {
 
 class ErrorCallback : public physx::PxErrorCallback {
   public:
-    ErrorCallback() : m_logger(logger->clone("PhysX")) {}
+    ErrorCallback() : m_logger(g_logger->clone("PhysX")) {}
 
     void reportError(physx::PxErrorCode::Enum code, const char* msg, const char* file, int line) override
     {

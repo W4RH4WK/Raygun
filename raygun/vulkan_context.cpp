@@ -142,7 +142,7 @@ void VulkanContext::setupDebug()
         return false;
     };
 
-    m_logger = logger->clone("Vulkan");
+    m_logger = g_logger->clone("Vulkan");
 
     auto severity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
     // severity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;

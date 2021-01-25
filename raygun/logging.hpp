@@ -25,12 +25,12 @@
 #include "raygun/utils/fmt_utils.hpp"
 #include "raygun/utils/macros.hpp"
 
-#define RAYGUN_TRACE ::raygun::logger->trace
-#define RAYGUN_DEBUG ::raygun::logger->debug
-#define RAYGUN_INFO ::raygun::logger->info
-#define RAYGUN_WARN ::raygun::logger->warn
-#define RAYGUN_ERROR ::raygun::logger->error
-#define RAYGUN_CRITICAL ::raygun::logger->critical
+#define RAYGUN_TRACE ::raygun::g_logger->trace
+#define RAYGUN_DEBUG ::raygun::g_logger->debug
+#define RAYGUN_INFO ::raygun::g_logger->info
+#define RAYGUN_WARN ::raygun::g_logger->warn
+#define RAYGUN_ERROR ::raygun::g_logger->error
+#define RAYGUN_CRITICAL ::raygun::g_logger->critical
 
 #define RAYGUN_FATAL(...) \
     do { \
@@ -41,6 +41,6 @@
 
 namespace raygun {
 
-extern RAYGUN_DLL_API std::shared_ptr<spdlog::logger> logger;
+extern RAYGUN_DLL_API std::shared_ptr<spdlog::logger> g_logger;
 
 } // namespace raygun
