@@ -37,12 +37,15 @@
     #endif
 #endif
 
-#ifdef _WIN32
-    #ifdef RAYGUN_DLL_EXPORT
-        #define RAYGUN_DLL_API __declspec(dllexport)
-    #else
-        #define RAYGUN_DLL_API __declspec(dllimport)
-    #endif
-#else
+// Uncomment this if you are building Raygun as a shared library.
+//#ifdef _WIN32
+//    #ifdef RAYGUN_DLL_EXPORT
+//        #define RAYGUN_DLL_API __declspec(dllexport)
+//    #else
+//        #define RAYGUN_DLL_API __declspec(dllimport)
+//    #endif
+//#endif
+
+#ifndef RAYGUN_DLL_API
     #define RAYGUN_DLL_API
 #endif

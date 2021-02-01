@@ -13,3 +13,5 @@ Next, enable the `raygun_copy_dlls` at the bottom:
 ```cmake
 raygun_copy_dlls($<TARGET_FILE:raygun>)
 ```
+
+Finally, uncomment the `RAYGUN_DLL_API` macro handling in `raygun/utils/macros.hpp`.

@@ -41,7 +41,7 @@ add_subdirectory(vendor/spdlog)
 
 file(GLOB_RECURSE raygun_srcs raygun/*.cpp raygun/*.hpp)
 
-add_library(raygun ${raygun_srcs})
+add_library(raygun STATIC ${raygun_srcs})
 target_include_directories(raygun PUBLIC .)
 target_link_libraries(raygun PUBLIC
     Threads::Threads
