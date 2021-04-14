@@ -62,7 +62,7 @@ void recompileAllShaders()
     for(const auto& entry: fs::directory_iterator(shaderDir)) {
         if(extensions.find(entry.path().extension()) == extensions.end()) continue;
 
-        const auto cmd = fmt::format("glslc.exe -o {0}.spv {0}", entry.path());
+        const auto cmd = fmt::format("glslc.exe --target-env=vulkan1.2 -o {0}.spv {0}", entry.path());
         if(system(cmd.c_str()) != 0) {
             RAYGUN_WARN("Compiling {} failed", entry.path());
         }
