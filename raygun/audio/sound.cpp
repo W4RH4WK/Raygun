@@ -38,6 +38,7 @@ Sound::Sound(string_view name, const fs::path& path) : m_name(name)
 
     const auto numChannels = op_channel_count(file, -1);
     if(numChannels > 2) {
+        op_free(file);
         RAYGUN_FATAL("Invalid sound file with more than 2 channels ({}): {}", numChannels, m_name);
     }
 
@@ -51,6 +52,7 @@ Sound::Sound(string_view name, const fs::path& path) : m_name(name)
 
     alGenBuffers(1, &m_buffer);
     if(RG().audioSystem().getError() != AL_NO_ERROR) {
+        op_free(file);
         RAYGUN_FATAL("Unable to generate audio buffer");
     }
 
@@ -58,8 +60,11 @@ Sound::Sound(string_view name, const fs::path& path) : m_name(name)
 
     alBufferData(m_buffer, format, buf.data(), (int)(buf.size() * sizeof(buf[0])), SAMPLE_RATE);
     if(RG().audioSystem().getError() != AL_NO_ERROR) {
+        op_free(file);
         RAYGUN_FATAL("Unable to fill audio buffer");
     }
+
+    op_free(file);
 }
 
 Sound::~Sound()
