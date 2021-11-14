@@ -39,14 +39,6 @@ ImGuiRenderer::ImGuiRenderer(RenderSystem& renderSystem)
 
     ImGui::GetIO().IniFilename = iniLocation.c_str();
 
-    ImGui::StyleColorsDark();
-    ImGui::GetStyle().WindowRounding = 0.0f;
-    ImGui::GetStyle().ChildRounding = 0.0f;
-    ImGui::GetStyle().FrameRounding = 0.0f;
-    ImGui::GetStyle().GrabRounding = 0.0f;
-    ImGui::GetStyle().PopupRounding = 0.0f;
-    ImGui::GetStyle().ScrollbarRounding = 0.0f;
-
     ImGui_ImplGlfw_InitForVulkan(window.window(), true);
 
     setupDescriptorPool();
