@@ -1,7 +1,7 @@
 file(GLOB_RECURSE example_srcs *.cpp *.hpp)
 
 add_executable(example ${example_srcs})
-target_link_libraries(example PRIVATE raygun)
+target_link_libraries(example PRIVATE raygun dl)
 
 raygun_enable_warnings(example)
 raygun_handle_copy_dlls(example)

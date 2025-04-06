@@ -46,6 +46,7 @@ target_include_directories(raygun PUBLIC .)
 target_link_libraries(raygun PUBLIC
     Threads::Threads
     ${CMAKE_DL_LIBS}
+    dl
 
     Vulkan::Vulkan
 
@@ -93,4 +94,5 @@ raygun_set_source_groups(raygun)
 #raygun_copy_dlls($<TARGET_FILE:raygun>)
 
 add_subdirectory(example)
+add_subdirectory(big_example)
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT example)

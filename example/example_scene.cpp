@@ -8,27 +8,46 @@ using namespace raygun::physics;
 
 ExampleScene::ExampleScene()
 {
+    RAYGUN_INFO("ExampleScene: Creating scene");
+    
     // setup level
+    RAYGUN_INFO("ExampleScene: Loading level entity 'room'");
     auto level = RG().resourceManager().loadEntity("room");
+    
+    RAYGUN_INFO("ExampleScene: Setting up physics for level objects");
     level->forEachEntity([](Entity& entity) {
         if(entity.model) {
+            RAYGUN_INFO("ExampleScene: Attaching rigid static to entity: {}", entity.name);
             RG().physicsSystem().attachRigidStatic(entity, GeometryType::TriangleMesh);
         }
     });
+    
+    RAYGUN_INFO("ExampleScene: Adding level to scene root");
     root->addChild(level);
 
     // setup ball
+    RAYGUN_INFO("ExampleScene: Creating ball entity");
     m_ball = std::make_shared<Ball>();
     m_ball->moveTo({3.0f, 0.0f, -3.0f});
+    
+    RAYGUN_INFO("ExampleScene: Adding ball to scene root");
     root->addChild(m_ball);
 
     // setup music
+    RAYGUN_INFO("ExampleScene: Loading music track 'lone_rider'");
     auto musicTrack = RG().resourceManager().loadSound("lone_rider");
+    
+    RAYGUN_INFO("ExampleScene: Starting music playback");
     RG().audioSystem().music().play(musicTrack);
 
     // setup ui stuff
+    RAYGUN_INFO("ExampleScene: Loading font 'NotoSans'");
     const auto font = RG().resourceManager().loadFont("NotoSans");
+    
+    RAYGUN_INFO("ExampleScene: Creating UI factory");
     m_uiFactory = std::make_unique<ui::Factory>(font);
+    
+    RAYGUN_INFO("ExampleScene: Construction complete");
 }
 
 void ExampleScene::processInput(raygun::input::Input input, double timeDelta)
@@ -50,8 +69,13 @@ void ExampleScene::processInput(raygun::input::Input input, double timeDelta)
 
     const auto strength = 2000.0 * timeDelta;
 
-    auto rigidDynamic = dynamic_cast<physx::PxRigidDynamic*>(m_ball->physicsActor.get());
-    RAYGUN_ASSERT(rigidDynamic);
+    auto* actor = m_ball->physicsActor.get();
+    if (!actor || !actor->is<physx::PxRigidDynamic>()) {
+        RAYGUN_ERROR("ExampleScene: Invalid ball physics actor");
+        return;
+    }
+    
+    auto* rigidDynamic = static_cast<physx::PxRigidDynamic*>(actor);
     rigidDynamic->addTorque((float)strength * physx::PxVec3(inputDir.x, 0.f, inputDir.y), physx::PxForceMode::eIMPULSE);
 }
 

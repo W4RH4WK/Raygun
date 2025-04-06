@@ -27,6 +27,10 @@
 #include "raygun/logging.hpp"
 #include "raygun/raygun.hpp"
 
+#if defined(__linux__) || defined(__APPLE__)
+#include <dlfcn.h>
+#endif
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace raygun {
@@ -75,12 +79,32 @@ VulkanContext::~VulkanContext()
 
 void VulkanContext::setupInstance()
 {
-    const std::vector<const char*> layers = {
+    // Check which validation layers are available
+    std::vector<const char*> layers;
 #ifndef NDEBUG
-        "VK_LAYER_KHRONOS_validation",
+    // Modern validation layer
+    layers.push_back("VK_LAYER_KHRONOS_validation");
 #endif
-        "VK_LAYER_LUNARG_monitor",
-    };
+    // Only add monitor layer if validation works - it's optional and may not be available
+    if (!layers.empty()) {
+        try {
+            auto availableLayers = vk::enumerateInstanceLayerProperties();
+            bool monitorLayerFound = false;
+            for (const auto& layer : availableLayers) {
+                if (strcmp("VK_LAYER_LUNARG_monitor", layer.layerName) == 0) {
+                    monitorLayerFound = true;
+                    break;
+                }
+            }
+            if (monitorLayerFound) {
+                layers.push_back("VK_LAYER_LUNARG_monitor");
+            }
+        } catch (...) {
+            // Just skip adding monitor layer if we can't query
+        }
+    } else {
+        RAYGUN_WARN("No validation layers enabled - running without validation");
+    }
 
     std::vector<const char*> extensions = {
 #ifndef NDEBUG
@@ -107,41 +131,70 @@ void VulkanContext::setupInstance()
     info.setPpEnabledExtensionNames(extensions.data());
     info.setPApplicationInfo(&appInfo);
 
-    vk::DynamicLoader dynamicLoader;
-    auto vkGetInstanceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+    // Initialize Vulkan dynamic dispatcher manually
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
+    
+    // Load Vulkan library and get the proc address
+#if defined(__linux__)
+    void* vulkanLib = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
+    if (!vulkanLib) {
+        vulkanLib = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+    }
+    if (vulkanLib) {
+        vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(vulkanLib, "vkGetInstanceProcAddr"));
+    } else {
+        RAYGUN_WARN("Failed to load Vulkan library - make sure Vulkan runtime is installed");
+    }
+#elif defined(_WIN32)
+    HMODULE vulkanLib = LoadLibraryA("vulkan-1.dll");
+    if (vulkanLib) {
+        vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetProcAddress(vulkanLib, "vkGetInstanceProcAddr"));
+    } else {
+        RAYGUN_WARN("Failed to load vulkan-1.dll - make sure Vulkan runtime is installed");
+    }
+#endif
+
+    if (!vkGetInstanceProcAddr) {
+        RAYGUN_FATAL("Failed to load Vulkan library or get vkGetInstanceProcAddr");
+    }
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
     instance = vk::createInstanceUnique(info);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
 }
 
+// Callback function must be global or static for proper type conversion
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) 
+{
+    auto vulkanLogger = static_cast<spdlog::logger*>(pUserData);
+
+    switch(severity) {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+        vulkanLogger->trace("{}", pCallbackData->pMessage);
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+        vulkanLogger->info("{}", pCallbackData->pMessage);
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+        vulkanLogger->warn("{}", pCallbackData->pMessage);
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        vulkanLogger->error("{}", pCallbackData->pMessage);
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
+        // This shouldn't happen in practice
+        break;
+    }
+
+    return VK_FALSE;
+}
+
 void VulkanContext::setupDebug()
 {
-    const auto cb = [](VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT* data,
-                       void* userData) -> VkBool32 {
-        auto vulkanLogger = static_cast<spdlog::logger*>(userData);
-
-        switch(severity) {
-        case VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            vulkanLogger->trace("{}", data->pMessage);
-            break;
-        case VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            vulkanLogger->info("{}", data->pMessage);
-            break;
-        case VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            vulkanLogger->warn("{}", data->pMessage);
-            break;
-        case VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            vulkanLogger->error("{}", data->pMessage);
-            break;
-        case VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
-            RAYGUN_FATAL("unreachable");
-            break;
-        }
-
-        return false;
-    };
-
     m_logger = g_logger->clone("Vulkan");
 
     auto severity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
@@ -154,7 +207,7 @@ void VulkanContext::setupDebug()
     vk::DebugUtilsMessengerCreateInfoEXT info = {};
     info.setMessageSeverity(severity);
     info.setMessageType(type);
-    info.setPfnUserCallback(cb);
+    info.setPfnUserCallback(debugCallback);
     info.setPUserData(m_logger.get());
 
     debugMessenger = instance->createDebugUtilsMessengerEXTUnique(info);

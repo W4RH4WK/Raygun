@@ -1,6 +1,9 @@
-/build*
+/build*/
 /config
 
 *.spv
 
 *.blend[1-9]
+
+core
+*.log

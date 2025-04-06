@@ -106,5 +106,6 @@ else()
         PhysX_PvdSDK
         PhysX_Foundation
         PhysX_Vehicle
+        dl
     )
 endif()

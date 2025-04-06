@@ -250,7 +250,9 @@ void PhysicsSystem::update(double timeDelta)
     scene.root->forEachEntity([&](Entity& entity) {
         if(!entity.physicsActor) return;
 
-        if(auto rigidDynamic = dynamic_cast<PxRigidDynamic*>(entity.physicsActor.get())) {
+        auto* actor = entity.physicsActor.get();
+        if (actor && actor->is<PxRigidDynamic>()) {
+            auto* rigidDynamic = static_cast<PxRigidDynamic*>(actor);
             auto transform = physics::toTransform(rigidDynamic->getGlobalPose(), entity.transform().scaling);
             entity.setTransform(entity.parentTransform().inverse() * transform);
         }

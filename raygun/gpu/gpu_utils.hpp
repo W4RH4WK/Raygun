@@ -32,7 +32,7 @@ namespace raygun::gpu {
 template<typename T, typename OwnerType>
 vk::UniqueHandle<T, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> wrapUnique(const T& value, const OwnerType& owner)
 {
-    const vk::ObjectDestroy destroyer{owner, nullptr, VULKAN_HPP_DEFAULT_DISPATCHER};
+    const vk::detail::ObjectDestroy<OwnerType, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> destroyer{owner, nullptr, VULKAN_HPP_DEFAULT_DISPATCHER};
     return vk::UniqueHandle<T, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>{value, destroyer};
 }
 
@@ -40,7 +40,7 @@ vk::UniqueHandle<T, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE> wrapUnique(const T& valu
 /// vector of raw handles since no transfer of ownership occurs. This utility
 /// function does the necessary unwrapping.
 template<typename T>
-std::vector<T> unwrapUniques(std::vector<vk::UniqueHandle<T, vk::DispatchLoaderDynamic>>& uniques)
+std::vector<T> unwrapUniques(std::vector<vk::UniqueHandle<T, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>>& uniques)
 {
     const auto deref = [](auto& unique) { return *unique; };
 

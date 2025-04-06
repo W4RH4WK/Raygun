@@ -276,7 +276,9 @@ void Entity::invalidateChildrenCachedParentTransform()
 
 void Entity::updatePhysicsTransform()
 {
-    if(auto rigidDynamic = dynamic_cast<physx::PxRigidDynamic*>(physicsActor.get())) {
+    auto* actor = physicsActor.get();
+    if (actor && actor->is<physx::PxRigidDynamic>()) {
+        auto* rigidDynamic = static_cast<physx::PxRigidDynamic*>(actor);
         rigidDynamic->setGlobalPose(physics::toTransform(globalTransform()));
     }
 }

@@ -2,6 +2,8 @@
     <img src="docs/logo.png" title="Raygun" alt="Logo" />
 </p>
 
+[**updated build instructions!**](ubuntu-20-full-install.sh)
+
 Raygun is a simplistic game engine built around [Vulkan Ray Tracing].
 Therefore, a GPU supporting hardware ray tracing is required.
 
